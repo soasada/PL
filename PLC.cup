@@ -1,0 +1,34 @@
+import java_cup.runtime.*;
+
+/* Terminales */
+
+terminal				MAS, MENOS, POR, DIV;
+terminal				AP, CP, AL, CL, AC, CC;
+terminal				PYC;
+terminal				ASIG;
+terminal 				EOLN;
+terminal 				PRINT;
+terminal Boolean			TRUE, FALSE;
+terminal String 			IDENT;
+terminal Integer 			NUMERO;
+terminal Double				NUMEROF;
+
+/* No terminales */
+
+non terminal				listaSent;
+non terminal String			exp;
+non terminal String 			sent;
+
+/* Precedencia */
+
+precedence right			ASIG;
+precedence left 			MAS, MENOS;
+precedence left 			POR, DIV;
+
+/* Gramatica */
+
+listaSent 				::= listaSent sent
+					| sent
+					;
+
+
