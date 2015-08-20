@@ -6,6 +6,7 @@ terminal AC, CC;
 terminal PYC, POR, AL, CL, ASIG, AP, CP;
 terminal IF, ELSE;
 terminal DO, WHILE;
+terminal TO, STEP, DOWNTO;
 terminal FOR;
 terminal MASMAS;
 terminal MENOSMENOS;
@@ -16,14 +17,15 @@ terminal AND;
 terminal OR;
 terminal PRINT;
 
-terminal java.lang.Number NUMERO;
-terminal java.lang.Number NUMEROF;
+terminal java.lang.Integer NUMERO;
+terminal java.lang.Double NUMEROF;
 terminal java.lang.String IDENT;
 
 /* No terminales */
 
 non terminal listaSent;
 non terminal sent;
+non terminal java.lang.String exp;
 
 /* Precedencia */
 
@@ -37,3 +39,51 @@ precedence right NOT;
 
 /* Gramatica */
 
+listaSent	::=	sent
+		|	listaSent sent
+		;
+
+
+sent		::=	exp:e PYC
+		|	PRINT AP exp:e1 CP PYC		{: 
+								Generador.print(e1); 
+							:}
+		|	AL listaSent CL			{: :}
+		;
+
+exp		::=	exp:e1 MAS exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " + " + e2);
+							:}
+
+		|	exp:e1 MENOS exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " - " + e2);
+							:}
+
+		|	exp:e1 POR exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " * " + e2);
+							:}
+
+		| 	exp:e1 DIV exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " / " + e2);
+							:}
+
+		| 	MENOS exp:e1			{:
+								RESULT = Generador.arithmetic("0 -" + e1);
+							:} %prec UMINUS
+		
+		| 	AP exp:e1 CP			{:
+								RESULT = e1;
+							:}
+
+		|	IDENT:i ASIG exp:e1		{:
+								RESULT = Generador.assignment(i, e1);
+							:}
+
+		|	IDENT:i				{:
+								RESULT = i;
+							:}
+
+		|	NUMERO:n			{:
+								RESULT = n.toString();
+							:}
+		;
