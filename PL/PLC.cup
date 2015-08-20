@@ -1,0 +1,39 @@
+import java_cup.runtime.*;
+
+/* Terminales */
+
+terminal AC, CC;
+terminal PYC, POR, AL, CL, ASIG, AP, CP;
+terminal IF, ELSE;
+terminal DO, WHILE;
+terminal FOR;
+terminal MASMAS;
+terminal MENOSMENOS;
+terminal MAS, MENOS, NOT, DIV, MOD, UMINUS;
+terminal MEQ, MAQ, MEOQ, MAOQ;
+terminal EQ, NEQ;
+terminal AND;
+terminal OR;
+terminal PRINT;
+
+terminal java.lang.Number NUMERO;
+terminal java.lang.Number NUMEROF;
+terminal java.lang.String IDENT;
+
+/* No terminales */
+
+non terminal listaSent;
+non terminal sent;
+
+/* Precedencia */
+
+precedence left  MAS, MENOS;
+precedence left  POR, DIV;
+precedence left  UMINUS;
+precedence left  AND, OR;
+precedence left  ELSE;
+precedence right NOT;
+
+
+/* Gramatica */
+
