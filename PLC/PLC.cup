@@ -71,7 +71,7 @@ exp		::=	exp:e1 MAS exp:e2		{:
 							:}
 
 		| 	MENOS exp:e1			{:
-								RESULT = Generador.arithmetic("0 -" + e1);
+								RESULT = Generador.arithmetic("-" + e1);
 							:} %prec UMINUS
 		
 		| 	AP exp:e1 CP			{:
