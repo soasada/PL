@@ -15,3 +15,6 @@
 hs_err_pid*
 plc
 ctd
+Yylex.java
+parser.java
+sym.java
