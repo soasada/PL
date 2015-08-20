@@ -44,7 +44,7 @@ listaSent	::=	sent
 		;
 
 
-sent		::=	exp:e PYC
+sent		::=	exp:e PYC			{: :}
 		
 		|	PRINT AP exp:e1 CP PYC		{: 
 								Generador.print(e1); 
