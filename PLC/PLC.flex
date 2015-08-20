@@ -15,6 +15,14 @@ TraditionalComment 	= "/*" [^*] ~"*/" | "/*" "*"+ "/"
 EndOfLineComment 	= "//" {InputCharacter}* {LineTerminator}?
 DocumentationComment    = "/*" "*"+ [^/*] ~"*/"
 
+/* floating point literals */        
+DoubleLiteral = ({FLit1}|{FLit2}|{FLit3}) {Exponent}?
+
+FLit1    = [0-9]+ \. [0-9]* 
+FLit2    = \. [0-9]+ 
+FLit3    = [0-9]+ 
+Exponent = [eE] [+-]? [0-9]+
+
 %%
 
 /* Expresiones y reglas */
@@ -66,11 +74,9 @@ DocumentationComment    = "/*" "*"+ [^/*] ~"*/"
 
         0|[1-9][0-9]*                                   { return new Symbol(sym.NUMERO, new Integer(yytext())); }
 				
-						
 						/* floating point numbers and exponents */
 
-	[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?		{ return new Symbol(sym.NUMEROF, new Double(yytext())); }
-
+  	{DoubleLiteral}                			{ return new Symbol(sym.NUMEROF, new Double(yytext())); }
 
 						/* Comments */
 
@@ -87,3 +93,4 @@ DocumentationComment    = "/*" "*"+ [^/*] ~"*/"
 						/* Error */
 
 	[^]						{ throw new Error("Illegal character <"+yytext()+">"); }
+

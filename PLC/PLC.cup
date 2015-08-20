@@ -89,4 +89,8 @@ exp		::=	exp:e1 MAS exp:e2		{:
 		|	NUMERO:n			{:
 								RESULT = n.toString();
 							:}
+
+		|	NUMEROF:n			{:
+								RESULT = n.toString();
+							:}
 		;
