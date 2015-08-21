@@ -2,7 +2,7 @@ import java.io.FileReader;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
-public class PLC{
+public class PLXC{
 
 	static public void main(String argv[]){
 		try{
