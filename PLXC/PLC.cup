@@ -1,0 +1,216 @@
+import java_cup.runtime.*;
+
+
+/* Terminales */
+
+terminal AC, CC;
+terminal PYC, POR, AL, CL, ASIG, AP, CP;
+terminal String IF, ELSE;
+terminal PRINT;
+terminal String DO, WHILE;
+terminal TO, STEP, DOWNTO;
+terminal String FOR;
+terminal MASMAS;
+terminal MENOSMENOS;
+terminal MAS, MENOS, NOT, DIV, MOD, UMINUS;
+terminal MEQ, MAQ, MEOQ, MAOQ;
+terminal EQ, NEQ;
+terminal AND;
+terminal OR;
+
+terminal java.lang.Integer NUMERO;
+terminal java.lang.Double NUMEROF;
+terminal java.lang.String IDENT;
+
+/* No terminales */
+
+non terminal listaSent;
+non terminal sent;
+non terminal elsePart;
+non terminal Tag cond;
+non terminal java.lang.String exp;
+
+/* Precedencia */
+
+precedence left  MAS, MENOS;
+precedence left  POR, DIV;
+precedence left  UMINUS;
+precedence left  AND, OR;
+precedence left  ELSE;
+precedence right NOT;
+
+
+/* Gramatica */
+
+listaSent	::=	sent
+		|	listaSent sent
+		;
+
+
+sent		::=	exp:e PYC			{: :}
+
+		|	IF:tagIf AP cond:c CP 		{: 
+								Generador.label(c.getV());
+							:}
+			
+			sent				{:
+								Generador.goTo(tagIf);
+								Generador.label(c.getF());
+							:}
+			elsePart			{:
+								Generador.label(tagIf);
+							:}
+
+		|	WHILE:tagWhile AP		{:
+								Generador.label(tagWhile);
+							:}
+
+			cond:c CP			{:
+								Generador.label(c.getV());
+							:}
+
+			sent				{:
+								Generador.goTo(tagWhile);
+								Generador.label(c.getF());
+							:}
+
+		|	DO:tagDo			{:
+								Generador.label(tagDo);
+							:}
+
+			sent				{: :}
+
+			WHILE AP cond:c CP PYC		{:
+								Generador.label(c.getV());
+								Generador.goTo(tagDo);
+								Generador.label(c.getF());
+							:}
+
+		|	FOR:tagFor AP exp:e1 PYC	{:
+								Generador.label(tagFor);
+							:}
+
+			cond:c1 PYC			{:
+								RESULT = Generador.getTag();
+								Generador.label(RESULT.toString());
+							:}
+
+			exp:e2 CP			{:
+								Generador.goTo(tagFor);
+								Generador.label(c1.getV());
+							:}
+
+			sent				{:
+								Generador.goTo(RESULT.toString());
+								Generador.label(c1.getF());
+							:}
+		
+		|	PRINT AP exp:e1 CP PYC		{: 
+								Generador.print(e1); 
+							:}
+
+		|	AL listaSent CL			{: :}
+
+		;
+
+
+elsePart 	::= 	ELSE sent
+	   	|
+	   	;
+
+exp		::=	exp:e1 MAS exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " + " + e2);
+							:}
+
+		|	exp:e1 MENOS exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " - " + e2);
+							:}
+
+		|	exp:e1 POR exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " * " + e2);
+							:}
+
+		| 	exp:e1 DIV exp:e2		{:
+								RESULT = Generador.arithmetic(e1 + " / " + e2);
+							:}
+
+		| 	MENOS exp:e1			{:
+								RESULT = Generador.arithmetic("-" + e1);
+							:} %prec UMINUS
+		
+		| 	AP exp:e1 CP			{:
+								RESULT = e1;
+							:}
+
+		|	IDENT:i ASIG exp:e1		{:
+								RESULT = Generador.assignment(i, e1);
+							:}
+
+		|	IDENT:i				{:
+								RESULT = i;
+							:}
+
+		|	NUMERO:n			{:
+								RESULT = n.toString();
+							:}
+
+		|	NUMEROF:n			{:
+								RESULT = n.toString();
+							:}
+		;
+
+cond 		::=	exp:e1 EQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.EQ, e2);
+							:}
+
+		|	exp:e1 NEQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.NEQ, e2);
+							:}
+
+		| 	exp:e1 MEQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MEQ, e2);
+							:}
+
+		|	exp:e1 MEOQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MEOQ, e2);
+							:}
+
+		| 	exp:e1 MAQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MAQ, e2);
+							:}
+
+		| 	exp:e1 MAOQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MAOQ, e2);
+							:}
+
+		|	NOT cond:c			{:
+								String temp = c.getV();
+								c.setV(c.getF());
+								c.setF(temp);
+								RESULT = c;
+							:}
+	
+		| 	cond:c1 AND			{:
+								Generador.label(c1.getV());
+							:}
+
+			cond:c2				{:
+								Generador.label(c1.getF());
+								Generador.goTo(c2.getV());
+								RESULT = c2;
+							:}
+
+		|	cond:c1 OR			{:
+								Generador.label(c1.getF());
+							:}
+
+			cond:c2				{:
+								Generador.label(c1.getV());
+								Generador.goTo(c2.getF());
+								RESULT = c2;
+							:}
+
+		|	AP cond:c CP			{:
+								RESULT = c;
+							:}
+		;
