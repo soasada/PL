@@ -30,11 +30,11 @@ Exponent = [eE] [+-]? [0-9]+
                                         /* Reserved words */
 
         "print"                                         { return new Symbol(sym.PRINT); }
-        "if"                                            { return new Symbol(sym.IF); }
+        "if"                                            { return new Symbol(sym.IF, Generador.getTag()); }
         "else"                                          { return new Symbol(sym.ELSE); }
-        "while"                                         { return new Symbol(sym.WHILE); }
-        "do"                                            { return new Symbol(sym.DO); }
-        "for"                                           { return new Symbol(sym.FOR); }
+        "while"                                         { return new Symbol(sym.WHILE, Generador.getTag()); }
+        "do"                                            { return new Symbol(sym.DO, Generador.getTag()); }
+        "for"                                           { return new Symbol(sym.FOR, Generador.getTag()); }
         "to"                                            { return new Symbol(sym.TO); }
         "downto"                                        { return new Symbol(sym.DOWNTO); }
         "step"                                          { return new Symbol(sym.STEP); }

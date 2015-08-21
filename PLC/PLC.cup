@@ -4,11 +4,11 @@ import java_cup.runtime.*;
 
 terminal AC, CC;
 terminal PYC, POR, AL, CL, ASIG, AP, CP;
-terminal IF, ELSE;
+terminal String IF, ELSE;
 terminal PRINT;
-terminal DO, WHILE;
+terminal String DO, WHILE;
 terminal TO, STEP, DOWNTO;
-terminal FOR;
+terminal String FOR;
 terminal MASMAS;
 terminal MENOSMENOS;
 terminal MAS, MENOS, NOT, DIV, MOD, UMINUS;
@@ -25,6 +25,8 @@ terminal java.lang.String IDENT;
 
 non terminal listaSent;
 non terminal sent;
+non terminal elsePart;
+non terminal Tag cond;
 non terminal java.lang.String exp;
 
 /* Precedencia */
@@ -45,6 +47,18 @@ listaSent	::=	sent
 
 
 sent		::=	exp:e PYC			{: :}
+
+		|	IF:endIf AP cond:c CP 		{: 
+								Generador.label(c.getV());
+							:}
+			
+			sent				{:
+								Generador.goTo(endIf);
+								Generador.label(c.getF());
+							:}
+			elsePart			{:
+								Generador.label(endIf);
+							:}
 		
 		|	PRINT AP exp:e1 CP PYC		{: 
 								Generador.print(e1); 
@@ -53,6 +67,11 @@ sent		::=	exp:e PYC			{: :}
 		|	AL listaSent CL			{: :}
 
 		;
+
+
+elsePart 	::= 	ELSE sent
+	   	|
+	   	;
 
 exp		::=	exp:e1 MAS exp:e2		{:
 								RESULT = Generador.arithmetic(e1 + " + " + e2);
@@ -92,5 +111,61 @@ exp		::=	exp:e1 MAS exp:e2		{:
 
 		|	NUMEROF:n			{:
 								RESULT = n.toString();
+							:}
+		;
+
+cond 		::=	exp:e1 EQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.EQ, e2);
+							:}
+
+		|	exp:e1 NEQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.NEQ, e2);
+							:}
+
+		| 	exp:e1 MEQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MEQ, e2);
+							:}
+
+		|	exp:e1 MEOQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MEOQ, e2);
+							:}
+
+		| 	exp:e1 MAQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MAQ, e2);
+							:}
+
+		| 	exp:e1 MAOQ exp:e2		{:
+								RESULT = Generador.condition(e1, Tag.MAOQ, e2);
+							:}
+
+		|	NOT cond:c			{:
+								String temp = c.getV();
+								c.setV(c.getF());
+								c.setF(temp);
+								RESULT = c;
+							:}
+	
+		| 	cond:c1 AND			{:
+								Generador.label(c1.getV());
+							:}
+
+			cond:c2				{:
+								Generador.label(c1.getF());
+								Generador.goTo(c2.getV());
+								RESULT = c2;
+							:}
+
+		|	cond:c1 OR			{:
+								Generador.label(c1.getF());
+							:}
+
+			cond:c2				{:
+								Generador.label(c1.getV());
+								Generador.goTo(c2.getF());
+								RESULT = c2;
+							:}
+
+		|	AP cond:c CP			{:
+								RESULT = c;
 							:}
 		;
