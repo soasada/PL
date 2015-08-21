@@ -1,5 +1,6 @@
 import java_cup.runtime.*;
 
+
 /* Terminales */
 
 terminal AC, CC;
@@ -48,16 +49,60 @@ listaSent	::=	sent
 
 sent		::=	exp:e PYC			{: :}
 
-		|	IF:endIf AP cond:c CP 		{: 
+		|	IF:tagIf AP cond:c CP 		{: 
 								Generador.label(c.getV());
 							:}
 			
 			sent				{:
-								Generador.goTo(endIf);
+								Generador.goTo(tagIf);
 								Generador.label(c.getF());
 							:}
 			elsePart			{:
-								Generador.label(endIf);
+								Generador.label(tagIf);
+							:}
+
+		|	WHILE:tagWhile AP		{:
+								Generador.label(tagWhile);
+							:}
+
+			cond:c CP			{:
+								Generador.label(c.getV());
+							:}
+
+			sent				{:
+								Generador.goTo(tagWhile);
+								Generador.label(c.getF());
+							:}
+
+		|	DO:tagDo			{:
+								Generador.label(tagDo);
+							:}
+
+			sent				{: :}
+
+			WHILE AP cond:c CP PYC		{:
+								Generador.label(c.getV());
+								Generador.goTo(tagDo);
+								Generador.label(c.getF());
+							:}
+
+		|	FOR:tagFor AP exp:e1 PYC	{:
+								Generador.label(tagFor);
+							:}
+
+			cond:c1 PYC			{:
+								RESULT = Generador.getTag();
+								Generador.label(RESULT.toString());
+							:}
+
+			exp:e2 CP			{:
+								Generador.goTo(tagFor);
+								Generador.label(c1.getV());
+							:}
+
+			sent				{:
+								Generador.goTo(RESULT.toString());
+								Generador.label(c1.getF());
 							:}
 		
 		|	PRINT AP exp:e1 CP PYC		{: 
