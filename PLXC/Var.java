@@ -25,8 +25,9 @@ public class Var{
 	}
 
 	public static String getVar(String name){
-		if(variables.get(name).size() > 1){
-			return name + "_" + variables.get(name).get(variables.get(name).size()-1);
+		int n = variables.get(name).size();
+		if(n > 1){
+			return name + "_" + variables.get(name).get(n-1);
 		}
 		else{
 			return name;
