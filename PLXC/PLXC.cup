@@ -1,43 +1,56 @@
 import java_cup.runtime.*;
 
 
+parser code {:
+    @Override
+    public void report_error(String message, Object info){ // Syntax error handling message
+        Generador.error();
+	Generador.halt();
+    }
+:}
+
 /* Terminales */
 
-terminal AC, CC;
-terminal PYC, POR, AL, CL, ASIG, AP, CP;
-terminal String IF, ELSE;
-terminal PRINT;
-terminal String DO, WHILE;
-terminal TO, STEP, DOWNTO;
-terminal String FOR;
-terminal MASMAS;
-terminal MENOSMENOS;
-terminal MAS, MENOS, NOT, DIV, MOD, UMINUS;
-terminal MEQ, MAQ, MEOQ, MAOQ;
-terminal EQ, NEQ;
-terminal AND;
-terminal OR;
+terminal 		INT;
+terminal 		AC, CC;
+terminal 		PYC, COMA, POR, AL, CL, ASIG, AP, CP;
+terminal String 	IF, ELSE;
+terminal 		PRINT;
+terminal String 	DO, WHILE;
+terminal String		TO, STEP, DOWNTO;
+terminal String 	FOR;
+terminal 		MASMAS;
+terminal 		MENOSMENOS;
+terminal 		MAS, MENOS, NOT, DIV, MOD, UMINUS;
+terminal 		MEQ, MAQ, MEOQ, MAOQ;
+terminal 		EQ, NEQ;
+terminal 		AND;
+terminal 		OR;
 
-terminal java.lang.Integer NUMERO;
-terminal java.lang.Double NUMEROF;
-terminal java.lang.String IDENT;
+terminal Integer 	NUMERO;
+terminal Double 	NUMEROF;
+terminal String 	IDENT;
 
 /* No terminales */
 
-non terminal listaSent;
-non terminal sent;
-non terminal elsePart;
-non terminal Tag cond;
-non terminal java.lang.String exp;
+non terminal 		listaSent;
+non terminal 		sent;
+non terminal 		elsePart;
+non terminal Tag 	cond;
+non terminal 		listaDec;
+non terminal 		dec;
+non terminal String 	exp;
 
 /* Precedencia */
 
-precedence left  MAS, MENOS;
-precedence left  POR, DIV;
-precedence left  UMINUS;
-precedence left  AND, OR;
-precedence left  ELSE;
-precedence right NOT;
+precedence left 	COMA;
+precedence right	ASIG;
+precedence left  	MAS, MENOS;
+precedence left  	POR, DIV, MOD;
+precedence left  	UMINUS;
+precedence left  	AND, OR;
+precedence left  	ELSE;
+precedence right 	NOT;
 
 
 /* Gramatica */
@@ -104,13 +117,73 @@ sent		::=	exp:e PYC			{: :}
 								Generador.goTo(RESULT.toString());
 								Generador.label(c1.getF());
 							:}
+
+		|	FOR:tagFor exp:e1		{:
+								
+							:}
+
+			TO:tagTo exp:e2 DO		{:
+								Generador.label(tagFor);
+								RESULT = Generador.condition(e2, Tag.MEQ, e1);
+								Generador.label(tagTo);
+								Generador.assignment(Var.getVar(e1), e1 + " + " + "1");
+								Generador.goTo(tagFor);
+								Generador.label(((Tag)RESULT).getF());
+							:}
+			
+			sent				{:
+								Generador.goTo(tagTo);
+								Generador.label(((Tag)RESULT).getV());
+							:}
+
+		|	FOR:tagFor exp:e1		{:
+								
+							:}
+
+			DOWNTO exp:e2 DO:tagD		{:
+								Generador.label(tagFor);
+								RESULT = Generador.condition(e1, Tag.MEQ, e2);
+                                                                Generador.label(tagD);
+                                                                Generador.assignment(Var.getVar(e1), e1 + " - " + "1");
+                                                                Generador.goTo(tagFor);
+                                                                Generador.label(((Tag)RESULT).getF());
+							:}
+
+			sent				{:
+								Generador.goTo(tagD);
+								Generador.label(((Tag)RESULT).getV());
+							:}
+			
 		
 		|	PRINT AP exp:e1 CP PYC		{: 
 								Generador.print(e1); 
 							:}
 
-		|	AL listaSent CL			{: :}
+		|	AL 				{: 
+								Var.upLevel(); 
+							:}
+			
+			listaSent CL			{:
+								Var.clear(Var.getLevel()); 
+								Var.downLevel();
+							:}
 
+		|	INT listaDec PYC		{: :}
+
+		;
+
+listaDec	::=	dec
+		|	listaDec COMA dec
+		;
+
+dec		::=	IDENT:i ASIG exp:e1		{:
+								Var.addVar(i, Var.getLevel());
+								Generador.assignment(Var.getVar(i), e1);
+							:}
+
+		|	IDENT:i				{:
+								Var.addVar(i, Var.getLevel());
+							:}
 		;
 
 
@@ -134,6 +207,12 @@ exp		::=	exp:e1 MAS exp:e2		{:
 								RESULT = Generador.arithmetic(e1 + " / " + e2);
 							:}
 
+		|	exp:e1 MOD exp:e2		{:
+								String t1 = Generador.arithmetic(e1 + " / " + e2);
+								String t2 = Generador.arithmetic(t1 + " * " + e2);
+								RESULT = Generador.arithmetic(e1 + " - " + t2);
+							:}
+
 		| 	MENOS exp:e1			{:
 								RESULT = Generador.arithmetic("-" + e1);
 							:} %prec UMINUS
@@ -142,12 +221,46 @@ exp		::=	exp:e1 MAS exp:e2		{:
 								RESULT = e1;
 							:}
 
+		|	MASMAS IDENT:i1			{:
+								RESULT = Generador.assignment(i1, i1 + " + " + "1");
+							:}
+
+		|	IDENT:i1 MASMAS			{:
+								String temp = Generador.getTemp();
+								Generador.assignment(temp, i1);
+								Generador.assignment(i1, i1 + " + " + "1");
+								RESULT = temp;
+							:}
+
+		|	MENOSMENOS IDENT:i1		{:
+								RESULT = Generador.assignment(i1, i1 + " - " + "1");
+							:}
+
+		|	IDENT:i1 MENOSMENOS		{:
+								String temp = Generador.getTemp();
+                                                                Generador.assignment(temp, i1);
+                                                                Generador.assignment(i1, i1 + " - " + "1");
+                                                                RESULT = temp;
+							:}
+		
 		|	IDENT:i ASIG exp:e1		{:
-								RESULT = Generador.assignment(i, e1);
+								if(Var.exists(i)){
+									RESULT = Generador.assignment(Var.getVar(i), e1);
+								}
+								else{
+									Generador.error();
+									Generador.halt();
+								}
 							:}
 
 		|	IDENT:i				{:
-								RESULT = i;
+								if(Var.exists(i)){
+									RESULT = Var.getVar(i);
+								}
+								else{
+									Generador.error();
+									Generador.halt();
+								}
 							:}
 
 		|	NUMERO:n			{:

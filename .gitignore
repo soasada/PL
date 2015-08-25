@@ -8,6 +8,7 @@
 *.war
 *.ear
 *.pl
+*.plx
 *.ctd
 *.java~
 
@@ -15,6 +16,7 @@
 hs_err_pid*
 plc
 ctd
+plxc
 Yylex.java
 parser.java
 sym.java

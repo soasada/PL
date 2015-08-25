@@ -9,11 +9,12 @@ InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
 
 /* Comments */
-Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment}
+Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment} | {HashComment}
 
 TraditionalComment 	= "/*" [^*] ~"*/" | "/*" "*"+ "/"
 EndOfLineComment 	= "//" {InputCharacter}* {LineTerminator}?
 DocumentationComment    = "/*" "*"+ [^/*] ~"*/"
+HashComment		= "#" {InputCharacter}* {LineTerminator}?
 
 /* floating point literals */        
 DoubleLiteral = ({FLit1}|{FLit2}|{FLit3}) {Exponent}?
@@ -30,13 +31,14 @@ Exponent = [eE] [+-]? [0-9]+
                                         /* Reserved words */
 
         "print"                                         { return new Symbol(sym.PRINT); }
-        "if"                                            { return new Symbol(sym.IF, Generador.getTag()); }
         "else"                                          { return new Symbol(sym.ELSE); }
+	"int"						{ return new Symbol(sym.INT); }
+        "if"                                            { return new Symbol(sym.IF, Generador.getTag()); }
         "while"                                         { return new Symbol(sym.WHILE, Generador.getTag()); }
         "do"                                            { return new Symbol(sym.DO, Generador.getTag()); }
         "for"                                           { return new Symbol(sym.FOR, Generador.getTag()); }
-        "to"                                            { return new Symbol(sym.TO); }
-        "downto"                                        { return new Symbol(sym.DOWNTO); }
+        "to"                                            { return new Symbol(sym.TO, Generador.getTag()); }
+        "downto"                                        { return new Symbol(sym.DOWNTO, Generador.getTag()); }
         "step"                                          { return new Symbol(sym.STEP); }
 
 	
@@ -49,6 +51,7 @@ Exponent = [eE] [+-]? [0-9]+
         "["                                             { return new Symbol(sym.AC); }
         "]"                                             { return new Symbol(sym.CC); }
         ";"                                             { return new Symbol(sym.PYC); }
+	","						{ return new Symbol(sym.COMA); }
 
 					/* Operators */
 

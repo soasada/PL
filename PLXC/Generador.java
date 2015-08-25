@@ -6,8 +6,8 @@ public class Generador {
 	private static int tagCont = 0;
 	protected static PrintStream out = System.out;
 
-	private static String getTemp(){
-		return "t" + varTemp++;
+	public static String getTemp(){
+		return "$t" + varTemp++;
 	}
 
 	public static String getTag(){
@@ -18,8 +18,8 @@ public class Generador {
 		out.println("	print " + exp + ";");
 	}
 	
-	public static String assignment(String ident, String exp){
-		out.println("	" + ident + " = " + exp + ";");
+	public static String assignment(String ident, String exp){	
+		out.println("	" + ident  + " = " + exp + ";");
 		return ident;
 	}
 
@@ -35,6 +35,13 @@ public class Generador {
 	
 	public static void goTo(String tag){
 		out.println("	goto " + tag + ";");
+	}
+
+	public static void error(){
+		out.println("	error;");
+	}
+	public static void halt(){
+		out.println("	halt;");
 	}
 
 	public static Tag condition(String arg1, int cond, String arg2){
