@@ -26,7 +26,7 @@ public class Var{
 
 	public static String getVar(String name){
 		if(variables.get(name).size() > 1){
-			return name + "_" + nivel;
+			return name + "_" + variables.get(name).get(variables.get(name).size()-1);
 		}
 		else{
 			return name;
