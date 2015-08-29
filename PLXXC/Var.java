@@ -6,15 +6,15 @@ import java.util.ArrayList;
 
 public class Var{
 
-	private static Map<String, List<Integer>> variables = new HashMap<String, List<Integer>>();
+	private static Map<String, List<Variable>> variables = new HashMap<String, List<Variable>>();
 	private static int nivel = 0;
 
-	public static void addVar(String name, Integer n){
+	public static void addVar(String name, Variable n){
 		if(exists(name)){
 			variables.get(name).add(n);
 		}
 		else{
-			ArrayList<Integer> levels = new ArrayList<Integer>();
+			ArrayList<Variable> levels = new ArrayList<Variable>();
 			levels.add(n);
 			variables.put(name, levels);
 		}
@@ -26,12 +26,12 @@ public class Var{
 
 	public static String getVar(String name){
 		int n = variables.get(name).size();
-		if(n > 1){
-			return name + "_" + variables.get(name).get(n-1);
-		}
-		else{
-			return name;
-		}
+                if(n > 1){
+                        return name + "_" + variables.get(name).get(n-1).getNivel();
+                }
+                else{
+                        return name;
+                }
 	}
 
 	public static void downLevel(){
@@ -45,19 +45,18 @@ public class Var{
 
 	public static void clear(Integer level){
 
-		for(Iterator<Map.Entry<String, List<Integer>>> it = variables.entrySet().iterator(); it.hasNext(); ) {
+		for(Iterator<Map.Entry<String, List<Variable>>> it = variables.entrySet().iterator(); it.hasNext(); ) {
 
-			Map.Entry<String, List<Integer>> entry = it.next();
-			List<Integer> levels = entry.getValue();
+			Map.Entry<String, List<Variable>> entry = it.next();
+			List<Variable> levels = entry.getValue();
 		      
-		      	int ult = levels.get(levels.size()-1);
+		      	Variable ult = levels.get(levels.size()-1);
 		      
-		      	if(ult == level) {
+		      	if(ult.getNivel() == level) {
 		        	entry.getValue().remove(levels.indexOf(ult));
 		        
 		        	if(entry.getValue().size() == 0)
 		        		it.remove();
-		        
 		      	}
 		      
 		}
@@ -65,6 +64,22 @@ public class Var{
 
 	public static boolean exists(String name){
 		return variables.containsKey(name);
+	}
+
+	public static List<Variable> getListVar(String name){
+
+		String salida = "";
+		boolean flag = true;
+
+		for(int i = 0; i < name.length() && flag; i++){
+			if(name.charAt(i) == '_'){
+				flag = false;
+			}
+			else{
+				salida += name.charAt(i);
+			}
+		}
+		return variables.get(salida);
 	}
 
 }

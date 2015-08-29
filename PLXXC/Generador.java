@@ -1,13 +1,24 @@
 import java.io.PrintStream;
+import java.util.regex.Pattern;
 
 public class Generador {
+
+	public static final int MAS = 5;
+	public static final int MENOS = 6;
+	public static final int MULT = 7;
+	public static final int DIV = 8;
 
 	private static int varTemp = 0;
 	private static int tagCont = 0;
 	protected static PrintStream out = System.out;
 
-	public static String getTemp(){
-		return "$t" + varTemp++;
+	public static String getTemp(int tipo){
+		String salida = "$t" + varTemp++;
+		
+		Variable var = new Variable(Var.getLevel(), tipo);
+		Var.addVar(salida, var);
+		
+		return salida;
 	}
 
 	public static String getTag(){
@@ -17,15 +28,117 @@ public class Generador {
 	public static void print(String exp){
 		out.println("	print " + exp + ";");
 	}
+
+	public static String casting(String exp, int tipo){
+		String tmp = "";
+
+		System.out.println("exp: " + exp + " tipo: " + tipo);
+
+		if(tipo == Variable.INTEGER){
+			tmp = getTemp(Variable.INTEGER);
+			out.println("	" + tmp + " = (int) " + exp + ";");
+		}
+		else if(tipo == Variable.REAL){
+			tmp = getTemp(Variable.REAL);
+			out.println("	" + tmp + " = (float) " + exp + ";");
+		}
+		return tmp;
+	}
 	
 	public static String assignment(String ident, String exp){	
-		out.println("	" + ident  + " = " + exp + ";");
+		int tipo = 0;
+		int tipo2 = 0;
+
+		// System.out.println("IDENT: " + ident + "\n" + " EXP: " + exp);
+
+		tipo = checkExp(exp);
+		tipo2 = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTipo();
+
+		if(tipo == 60 || tipo == 70){
+			tipo = Var.getListVar(exp).get(Var.getListVar(exp).size()-1).getTipo();
+		}
+
+		if(tipo == 1 && tipo2 == 2){
+			out.println("	" + ident + " = (float)" + exp + ";");
+		}
+		else{
+			out.println("	" + ident  + " = " + exp + ";");
+		}
+		
 		return ident;
 	}
 
-	public static String arithmetic(String op){
-		String tmp = getTemp();
-		out.println("	" + tmp + " = " + op + ";");
+	public static String arithmetic(String arg1, String arg2, int op){
+		int tipo = 0;
+		int tipo2 = 0;
+
+		tipo = checkExp(arg1);
+		tipo2 = checkExp(arg2);
+
+		// System.out.println("tipo: " + tipo + " " + arg1 + "\ntipo2: " + tipo2 + " " + arg2);
+
+		if(tipo == 60 || tipo == 70){
+			tipo = Var.getListVar(arg1).get(Var.getListVar(arg1).size()-1).getTipo();
+		}
+
+		if(tipo2 == 60 || tipo2 == 70){
+			tipo2 = Var.getListVar(arg2).get(Var.getListVar(arg2).size()-1).getTipo();
+		}
+
+		// System.out.println("tipo: " + tipo + " " + arg1 + "\ntipo2: " + tipo2 + " " + arg2);
+
+		if((tipo == 1 && tipo2 == 2) || (tipo == 2 && tipo2 == 1)){
+			if(tipo == 1){
+				String tmp2 = getTemp(tipo2);
+				assignment(tmp2, arg1);
+				arg1 = tmp2;
+			}
+			else{
+				String tmp2 = getTemp(tipo);
+				assignment(tmp2, arg2);
+				arg2 = tmp2;
+			}
+		}
+
+		String tmp = getTemp(tipo);
+
+		if(tipo == 2 || tipo2 == 2){
+
+			switch(op){
+				case MAS:
+					out.println("   " + tmp + " = " + arg1 + " +r " + arg2 + ";");
+					break;
+				case MENOS:
+					out.println("	" + tmp + " = " + arg1 + " -r " + arg2 + ";");
+					break;
+				case MULT:
+					out.println("	" + tmp + " = " + arg1 + " *r " + arg2 + ";");
+					break;
+				case DIV:
+					out.println("	" + tmp + " = " + arg1 + " /r " + arg2 + ";");
+					break;
+				default:
+					out.println("	" + tmp + " = " + arg1 + ";");
+			}
+		}
+		else{
+			switch(op){
+                                case MAS:
+                                        out.println("   " + tmp + " = " + arg1 + " + " + arg2 + ";");
+                                        break;
+                                case MENOS:
+                                        out.println("   " + tmp + " = " + arg1 + " - " + arg2 + ";");
+                                        break;
+                                case MULT:
+                                        out.println("   " + tmp + " = " + arg1 + " * " + arg2 + ";");
+                                        break;
+                                case DIV:
+                                        out.println("   " + tmp + " = " + arg1 + " / " + arg2 + ";");
+                                        break;
+				default:
+					out.println("	" + tmp + " = " + arg1 + ";");
+                        }
+		}
 		return tmp;
 	}
 
@@ -78,4 +191,48 @@ public class Generador {
 		return new Tag(tagV, tagF);
 	}
 
+	public static boolean isReal(String in){
+
+		Pattern p = Pattern.compile("[-]?[0-9]*\\.[0-9]+[eE]*[+-]?[0-9]*");
+		
+		return Pattern.matches(p.pattern(), in);
+	}
+
+	public static boolean isInteger(String in){
+
+		Pattern p = Pattern.compile("0|[1-9][0-9]*");
+
+		return Pattern.matches(p.pattern(), in);
+	}
+
+	public static boolean isIdent(String in){
+
+		Pattern p = Pattern.compile("[_a-zA-Z][_a-zA-Z0-9]*");
+
+		return Pattern.matches(p.pattern(), in);
+	}
+
+	public static boolean isTemp(String in){
+		Pattern p = Pattern.compile("[$a-zA-Z][_a-zA-Z0-9]*");
+
+		return Pattern.matches(p.pattern(), in);
+	}
+
+	public static int checkExp(String in){
+		if(isReal(in)){
+			return 2;
+		}
+		else if(isInteger(in)){
+			return 1;
+		}
+		else if(isIdent(in)){
+			return 60;
+		}
+		else if(isTemp(in)){
+			return 70;
+		}
+		else{
+			return 0;
+		}
+	}
 }

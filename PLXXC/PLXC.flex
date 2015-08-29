@@ -33,6 +33,7 @@ Exponent = [eE] [+-]? [0-9]+
         "print"                                         { return new Symbol(sym.PRINT); }
         "else"                                          { return new Symbol(sym.ELSE); }
 	"int"						{ return new Symbol(sym.INT); }
+	"float"						{ return new Symbol(sym.FLOAT); }
         "if"                                            { return new Symbol(sym.IF, Generador.getTag()); }
         "while"                                         { return new Symbol(sym.WHILE, Generador.getTag()); }
         "do"                                            { return new Symbol(sym.DO, Generador.getTag()); }
@@ -52,6 +53,7 @@ Exponent = [eE] [+-]? [0-9]+
         "]"                                             { return new Symbol(sym.CC); }
         ";"                                             { return new Symbol(sym.PYC); }
 	","						{ return new Symbol(sym.COMA); }
+	":"						{ return new Symbol(sym.DOSPUNTOS); }
 
 					/* Operators */
 

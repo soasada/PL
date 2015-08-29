@@ -1,6 +1,13 @@
 import java_cup.runtime.*;
 
 
+action code {:
+	Variable var = new Variable(0,0);
+
+	/* Casting flags */
+	boolean flagFloat = false;
+:}
+
 parser code {:
     @Override
     public void report_error(String message, Object info){ // Syntax error handling message
@@ -12,8 +19,9 @@ parser code {:
 /* Terminales */
 
 terminal 		INT;
+terminal 		FLOAT;
 terminal 		AC, CC;
-terminal 		PYC, COMA, POR, AL, CL, ASIG, AP, CP;
+terminal 		PYC, COMA, POR, AL, CL, ASIG, AP, CP, DOSPUNTOS;
 terminal String 	IF, ELSE;
 terminal 		PRINT;
 terminal String 	DO, WHILE;
@@ -39,6 +47,11 @@ non terminal 		elsePart;
 non terminal Tag 	cond;
 non terminal 		listaDec;
 non terminal 		dec;
+non terminal 		tipo;
+non terminal String 	incremento;
+non terminal String	variable, numero;
+non terminal String	asig;
+non terminal String	casting;
 non terminal String 	exp, stepPart;
 
 /* Precedencia */
@@ -174,7 +187,7 @@ sent		::=	exp:e PYC			{: :}
 								Var.downLevel();
 							:}
 
-		|	INT listaDec PYC		{: :}
+		|	tipo listaDec PYC		{: :}
 
 		;
 
@@ -188,17 +201,26 @@ stepPart	::=	STEP exp:e1			{:
 
 		;
 
+tipo            ::=     INT                             {:
+								var = new Variable(Var.getLevel(), Variable.INTEGER); 
+							:}
+								
+                |       FLOAT                           {: 
+								var = new Variable(Var.getLevel(), Variable.REAL);
+							:}
+                ;
+
 listaDec	::=	dec
 		|	listaDec COMA dec
 		;
 
 dec		::=	IDENT:i ASIG exp:e1		{:
-								Var.addVar(i, Var.getLevel());
+								Var.addVar(i, var);
 								Generador.assignment(Var.getVar(i), e1);
 							:}
 
-		|	IDENT:i				{:
-								Var.addVar(i, Var.getLevel());
+		|	IDENT:i				{:	
+								Var.addVar(i, var);
 							:}
 		;
 
@@ -207,84 +229,138 @@ elsePart 	::= 	ELSE sent
 	   	|
 	   	;
 
-exp		::=	exp:e1 MAS exp:e2		{:
-								RESULT = Generador.arithmetic(e1 + " + " + e2);
+exp		::=	exp:e1 MAS exp:e2		{:	
+								RESULT = Generador.arithmetic(e1, e2, Generador.MAS);
 							:}
 
 		|	exp:e1 MENOS exp:e2		{:
-								RESULT = Generador.arithmetic(e1 + " - " + e2);
+								RESULT = Generador.arithmetic(e1, e2, Generador.MENOS);
 							:}
 
 		|	exp:e1 POR exp:e2		{:
-								RESULT = Generador.arithmetic(e1 + " * " + e2);
+								RESULT = Generador.arithmetic(e1, e2, Generador.MULT);
 							:}
 
 		| 	exp:e1 DIV exp:e2		{:
-								RESULT = Generador.arithmetic(e1 + " / " + e2);
+								flagFloat = false;
+								RESULT = Generador.arithmetic(e1, e2, Generador.DIV);
 							:}
 
 		|	exp:e1 MOD exp:e2		{:
-								String t1 = Generador.arithmetic(e1 + " / " + e2);
-								String t2 = Generador.arithmetic(t1 + " * " + e2);
-								RESULT = Generador.arithmetic(e1 + " - " + t2);
+								String t1 = Generador.arithmetic(e1, e2, Generador.DIV);
+								String t2 = Generador.arithmetic(t1, e2, Generador.MULT);
+								RESULT = Generador.arithmetic(e1, t2, Generador.MENOS);
 							:}
 
 		| 	MENOS exp:e1			{:
-								RESULT = Generador.arithmetic("-" + e1);
+								RESULT = Generador.arithmetic("-" + e1, "", 0);
 							:} %prec UMINUS
 		
 		| 	AP exp:e1 CP			{:
 								RESULT = e1;
 							:}
 
-		|	MASMAS IDENT:i1			{:
-								RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");
+		|	casting:n			{: 
+								RESULT = n; 
 							:}
 
-		|	IDENT:i1 MASMAS			{:
-								String temp = Generador.getTemp();
-								Generador.assignment(temp, Var.getVar(i1));
-								Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");
-								RESULT = temp;
+		|	incremento:i			{:
+								RESULT = i;
+							:}
+		
+		|	asig:a				{:
+								RESULT = a;
 							:}
 
-		|	MENOSMENOS IDENT:i1		{:
-								RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " - " + "1");
+		|	variable:v			{:
+								RESULT = v;
 							:}
 
-		|	IDENT:i1 MENOSMENOS		{:
-								String temp = Generador.getTemp();
+		|	numero:n			{:
+								RESULT = n;
+							:}
+
+		;
+
+numero		::=	NUMERO:n			{:
+								if(flagFloat){
+									RESULT = Generador.casting(n.toString(), Variable.REAL);
+								}
+								else{
+									RESULT = n.toString();
+								}
+							:}
+		
+		|	NUMEROF:n			{:
+								RESULT = n.toString();
+							:}
+		;
+
+asig 		::= 	IDENT:i ASIG exp:e1             {:
+                                                                if(Var.exists(i)){
+                                                                        RESULT = Generador.assignment(Var.getVar(i), e1);
+                                                                }
+                                                                else{
+                                                                        Generador.error();
+                                                                        Generador.halt();
+                                                                }
+                                                        :}
+		;
+
+variable	::=	IDENT:i				{:
+								if(Var.exists(i)){
+                                                                        RESULT = Var.getVar(i);
+                                                                }
+                                                                else{
+                                                                        Generador.error();
+                                                                        Generador.halt();
+                                                                }
+
+							:}
+		;
+
+incremento	::=	MASMAS IDENT:i1                 {:
+                                                                RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");
+                                                        :}
+
+                |       IDENT:i1 MASMAS                 {:
+                                                                String temp = Generador.getTemp(Var.getListVar(i1).get(Var.getListVar(i1).size()-1).getTipo());
+                                                                Generador.assignment(temp, Var.getVar(i1));
+                                                                Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");
+                                                                RESULT = temp;
+                                                        :}
+
+                |       MENOSMENOS IDENT:i1             {:
+                                                                RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " - " + "1");
+                                                        :}
+
+                |       IDENT:i1 MENOSMENOS             {:
+                                                                String temp = Generador.getTemp(Var.getListVar(i1).get(Var.getListVar(i1).size()-1).getTipo());
                                                                 Generador.assignment(temp, Var.getVar(i1));
                                                                 Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " - " + "1");
                                                                 RESULT = temp;
+                                                        :}
+		;
+
+casting 	::=	AP INT CP			{:
 							:}
-		
-		|	IDENT:i ASIG exp:e1		{:
-								if(Var.exists(i)){
-									RESULT = Generador.assignment(Var.getVar(i), e1);
+			
+			exp:e				{:
+								RESULT = Generador.casting(e, Variable.INTEGER);
+							:}
+
+		|	AP FLOAT CP			{:
+								flagFloat = true;
+							:}
+
+			exp:e				{:
+								if(flagFloat){
+									RESULT = Generador.casting(e, Variable.REAL);
 								}
 								else{
-									Generador.error();
-									Generador.halt();
+									RESULT = e;
 								}
-							:}
-
-		|	IDENT:i				{:
-								if(Var.exists(i)){
-									RESULT = Var.getVar(i);
-								}
-								else{
-									Generador.error();
-									Generador.halt();
-								}
-							:}
-
-		|	NUMERO:n			{:
-								RESULT = n.toString();
-							:}
-
-		|	NUMEROF:n			{:
-								RESULT = n.toString();
+								
 							:}
 		;
 
