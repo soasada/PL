@@ -9,10 +9,14 @@ public class Variable{
 
 	private int nivel;
 	private int tipo;
+	private boolean isArray;
+	private int tam;
 
 	public Variable(int nivel, int tipo){
 		this.nivel = nivel;
 		this.tipo = tipo;
+		this.isArray = false;
+		this.tam = 0;
 	}
 
 	public int getNivel(){
@@ -29,5 +33,21 @@ public class Variable{
 	
 	public void setTipo(int tipo){
 		this.tipo = tipo;
+	}
+
+	public boolean isArray(){
+		return this.isArray;
+	}
+
+	public void setIsArray(boolean flag){
+		this.isArray = flag;
+	}
+
+	public int getTam(){
+		return this.tam;
+	}
+
+	public void setTam(int tam){
+		this.tam = tam;
 	}
 }

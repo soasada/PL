@@ -48,6 +48,7 @@ non terminal Tag 	cond;
 non terminal 		listaDec;
 non terminal 		dec;
 non terminal 		tipo;
+non terminal String	dimensiones;
 non terminal String 	incremento;
 non terminal String	variable, numero;
 non terminal String	asig;
@@ -222,6 +223,24 @@ dec		::=	IDENT:i ASIG exp:e1		{:
 		|	IDENT:i				{:	
 								Var.addVar(i, var);
 							:}
+
+		| IDENT:i dimensiones:d ASIG exp:e1	{:
+								var.setIsArray(true);
+								var.setTam(new Integer(d));
+								Var.addVar(i, var);
+								Generador.assignment(Var.getVar(i), e1);
+							:}
+
+		|	IDENT:i dimensiones:d		{:
+								var.setIsArray(true);
+								var.setTam(new Integer(d));
+								Var.addVar(i, var);
+							:}
+		;
+
+dimensiones	::=	AC NUMERO:n CC 			{:
+								RESULT = n.toString();
+							:}
 		;
 
 
@@ -296,15 +315,13 @@ numero		::=	NUMERO:n			{:
 							:}
 		;
 
-asig 		::= 	IDENT:i ASIG exp:e1             {:
-                                                                if(Var.exists(i)){
-                                                                        RESULT = Generador.assignment(Var.getVar(i), e1);
-                                                                }
-                                                                else{
-                                                                        Generador.error();
-                                                                        Generador.halt();
-                                                                }
+asig 		::= 	IDENT:i ASIG exp:e1 		{:
+								RESULT = Generador.assignment(Var.getVar(i), e1);
                                                         :}
+
+		|	IDENT:i AC exp:e CC ASIG exp:e1	{:
+								RESULT = Generador.assignment(Var.getVar(i), e, e1);
+							:}
 		;
 
 variable	::=	IDENT:i				{:
@@ -317,6 +334,19 @@ variable	::=	IDENT:i				{:
                                                                 }
 
 							:}
+
+		|	IDENT:i AC exp:e CC		{:
+								if(Var.exists(i)){
+									String aux = Generador.getTemp(Var.getListVar(i).get(Var.getListVar(i).size()-1).getTipo());
+									Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
+									RESULT = aux;
+								}
+								else{
+									Generador.error();
+									Generador.halt();
+								}
+							:}
+
 		;
 
 incremento	::=	MASMAS IDENT:i1                 {:

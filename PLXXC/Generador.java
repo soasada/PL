@@ -32,7 +32,7 @@ public class Generador {
 	public static String casting(String exp, int tipo){
 		String tmp = "";
 
-		System.out.println("exp: " + exp + " tipo: " + tipo);
+		// System.out.println("exp: " + exp + " tipo: " + tipo);
 
 		if(tipo == Variable.INTEGER){
 			tmp = getTemp(Variable.INTEGER);
@@ -48,24 +48,62 @@ public class Generador {
 	public static String assignment(String ident, String exp){	
 		int tipo = 0;
 		int tipo2 = 0;
+		boolean flag = false;
 
 		// System.out.println("IDENT: " + ident + "\n" + " EXP: " + exp);
 
 		tipo = checkExp(exp);
 		tipo2 = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTipo();
-
+		
 		if(tipo == 60 || tipo == 70){
 			tipo = Var.getListVar(exp).get(Var.getListVar(exp).size()-1).getTipo();
+			flag = true;
 		}
 
-		if(tipo == 1 && tipo2 == 2){
+		if((tipo == 1 && tipo2 == 2) && flag){
 			out.println("	" + ident + " = (float)" + exp + ";");
 		}
+		else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
+			Generador.error();
+			Generador.halt();
+		}
 		else{
-			out.println("	" + ident  + " = " + exp + ";");
+			out.println("	" + ident + " = " + exp + ";");
 		}
 		
 		return ident;
+	}
+
+	public static String assignment(String ident, String index, String exp){
+		int tipo = 0;
+                int tipo2 = 0;
+                boolean flag = false;
+
+                // System.out.println("IDENT: " + ident + "\n" + "INDEX: " + index + "\n" +  " EXP: " + exp);
+
+		dimension(ident, index);
+
+                tipo = checkExp(exp);
+                tipo2 = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTipo();
+
+                if(tipo == 60 || tipo == 70){
+                        tipo = Var.getListVar(exp).get(Var.getListVar(exp).size()-1).getTipo();
+                        flag = true;
+                }
+
+                if((tipo == 1 && tipo2 == 2) && flag){
+                        out.println("   " + ident + " = (float)" + exp + ";");
+                }
+                else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
+                        Generador.error();
+                        Generador.halt();
+                }
+                else{
+			String aux = ident + "[" + index + "]";
+                        out.println("   " + aux +  " = " + exp + ";");
+                }
+
+                return ident;
 	}
 
 	public static String arithmetic(String arg1, String arg2, int op){
@@ -142,6 +180,29 @@ public class Generador {
 		return tmp;
 	}
 
+	public static void dimension(String ident, String index){
+		if(isTemp(ident)){
+			return;
+		}
+
+		if(!Var.getListVar(ident).get(Var.getListVar(ident).size()-1).isArray()){
+			return;
+		}
+
+		Tag tag = new Tag(getTag(), getTag());
+		int size = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTam();
+
+		out.println("# Comprobacion de rango");
+		out.println("   if (" + index + " < 0) goto " + tag.getV() + ";");
+		out.println("   if (" + size + " < " + index + ") goto " + tag.getV() + ";");
+		out.println("   if (" + size + " == " + index + ") goto " + tag.getV() + ";");
+		goTo(tag.getF());
+		label(tag.getV());
+		error();
+		halt();
+		label(tag.getF());
+	}
+
 	public static void label(String tag){
 		out.println(tag + ":");
 	}
@@ -213,8 +274,15 @@ public class Generador {
 	}
 
 	public static boolean isTemp(String in){
-		Pattern p = Pattern.compile("[$a-zA-Z][_a-zA-Z0-9]*");
+		Pattern p = Pattern.compile("[$][a-zA-Z][_a-zA-Z0-9]*");
 
+		return Pattern.matches(p.pattern(), in);
+	}
+
+	public static boolean isArray(String in){
+
+		Pattern p = Pattern.compile("[_a-zA-Z]+(?:\\[[_a-zA-Z0-9]*\\])+");
+	 
 		return Pattern.matches(p.pattern(), in);
 	}
 
@@ -224,6 +292,9 @@ public class Generador {
 		}
 		else if(isInteger(in)){
 			return 1;
+		}
+		else if(isArray(in)){
+			return 3;
 		}
 		else if(isIdent(in)){
 			return 60;
