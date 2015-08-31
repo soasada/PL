@@ -1,5 +1,6 @@
 import java.io.PrintStream;
 import java.util.regex.Pattern;
+import java.util.List;
 
 public class Generador {
 
@@ -50,13 +51,21 @@ public class Generador {
 		int tipo2 = 0;
 		boolean flag = false;
 
+		if(Var.getLastVar(ident).isArray() && Var.getLastVar(exp).isArray()){
+			return arrayAssignment(ident, exp);
+		}
+
 		// System.out.println("IDENT: " + ident + "\n" + " EXP: " + exp);
 
 		tipo = checkExp(exp);
-		tipo2 = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTipo();
+		tipo2 = Var.getLastVar(ident).getTipo();
+
+		if(tipo == 3){
+			dimension(exp, exp);
+		}
 		
 		if(tipo == 60 || tipo == 70){
-			tipo = Var.getListVar(exp).get(Var.getListVar(exp).size()-1).getTipo();
+			tipo = Var.getLastVar(exp).getTipo();
 			flag = true;
 		}
 
@@ -74,6 +83,28 @@ public class Generador {
 		return ident;
 	}
 
+	public static String arrayAssignment(String ident, String exp){
+		int tipo = Var.getLastVar(ident).getTipo();
+		int tipo2 = Var.getLastVar(exp).getTipo();
+
+		if(tipo != tipo2){
+			error();
+			halt();
+		}
+
+		if(Var.getLastVar(ident).getTam() < Var.getLastVar(exp).getTam()){
+			error();
+			halt();
+		}
+
+		String tmp = getTemp(tipo);
+		for(int i = 0; i < Var.getLastVar(ident).getTam(); i++){
+			out.println("	" + tmp + " = " + exp + "[" + i + "]" + ";");
+			out.println("	" + ident + "[" + i + "]" + " = " + tmp + ";");
+		}
+		return tmp;
+	}
+
 	public static String assignment(String ident, String index, String exp){
 		int tipo = 0;
                 int tipo2 = 0;
@@ -84,26 +115,78 @@ public class Generador {
 		dimension(ident, index);
 
                 tipo = checkExp(exp);
-                tipo2 = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTipo();
+                tipo2 = Var.getLastVar(ident).getTipo();
 
                 if(tipo == 60 || tipo == 70){
-                        tipo = Var.getListVar(exp).get(Var.getListVar(exp).size()-1).getTipo();
+                        tipo = Var.getLastVar(exp).getTipo();
                         flag = true;
                 }
 
+		// System.out.println("tipo: " + tipo + " tipo2: " + tipo2);
+
                 if((tipo == 1 && tipo2 == 2) && flag){
-                        out.println("   " + ident + " = (float)" + exp + ";");
+			String tmp = getTemp(Var.getLastVar(ident).getTipo());
+			out.println("	" + tmp + " = (float) " + exp + ";");
+                        out.println("   " + ident + "[" + index + "]" + " = " + tmp + ";");
                 }
                 else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
-                        Generador.error();
-                        Generador.halt();
-                }
+                	String tmp = getTemp(tipo2);
+			out.println("	" + tmp + " = (float) " + exp + ";");
+			out.println("   " + ident + "[" + index + "]" + " = " + tmp + ";");
+		}
                 else{
 			String aux = ident + "[" + index + "]";
                         out.println("   " + aux +  " = " + exp + ";");
                 }
 
                 return ident;
+	}
+
+	public static void arrayInit(String ident, List<String> exps){
+		int tipo = 0;
+		int index = 0;
+
+		if(Var.getLastVar(ident).getTam() < exps.size()){
+			error();
+			halt();
+			return;
+		}
+
+		// System.out.println("IDENT: " + ident + "\n" + "EXP: " + exps.get(1));
+
+		int tipo2 = checkExp(exps.get(1));
+
+		if(tipo2 == 60 || tipo2 == 70){
+			tipo2 = Var.getLastVar(exps.get(1)).getTipo();
+		}
+
+		if(Var.getLastVar(ident).getTipo() != tipo2){
+			error();
+			halt();
+			return;
+		}
+
+		tipo = checkExp(ident);
+
+		if(tipo == 60 || tipo == 70){
+			tipo = Var.getLastVar(ident).getTipo();
+		}
+
+		String tmp = getTemp(tipo);
+		String tmp2 = getTemp(tipo);
+		Var.getLastVar(tmp).setIsArray(true);
+
+		for(String iter : exps){
+			out.println("   " + tmp + "[" + index + "]" + " = " + iter + ";");
+			index++;
+		}
+
+		for(int i = 0; i < index; i++){
+			out.println("	" + tmp2 + " = " + tmp + "[" + i + "]" + ";");
+			out.println("	" + ident + "[" + i + "]" + " = " + tmp2 + ";");
+		}
+
+		out.println("	" + ident + " = " + tmp + ";");
 	}
 
 	public static String arithmetic(String arg1, String arg2, int op){
@@ -116,11 +199,11 @@ public class Generador {
 		// System.out.println("tipo: " + tipo + " " + arg1 + "\ntipo2: " + tipo2 + " " + arg2);
 
 		if(tipo == 60 || tipo == 70){
-			tipo = Var.getListVar(arg1).get(Var.getListVar(arg1).size()-1).getTipo();
+			tipo = Var.getLastVar(arg1).getTipo();
 		}
 
 		if(tipo2 == 60 || tipo2 == 70){
-			tipo2 = Var.getListVar(arg2).get(Var.getListVar(arg2).size()-1).getTipo();
+			tipo2 = Var.getLastVar(arg2).getTipo();
 		}
 
 		// System.out.println("tipo: " + tipo + " " + arg1 + "\ntipo2: " + tipo2 + " " + arg2);
@@ -181,6 +264,32 @@ public class Generador {
 	}
 
 	public static void dimension(String ident, String index){
+                if(isArray(ident) && isArray(index)){
+                        boolean flag = true;
+                        String aux = "";
+                        for(int i = 0; i < ident.length() && flag; i++){
+                                if(ident.charAt(i) == '['){
+                                        flag = false;
+                                }
+                                else{
+                                        aux += ident.charAt(i);
+                                }
+                        }
+                        ident = aux;
+
+                        aux = "";
+                        flag = true;
+
+                        for(int j = 0; j < index.length() && flag; j++){
+                                if(index.charAt(j) == '['){
+                                        aux += index.charAt(j+1) + "";
+                                        flag = false;
+                                }
+                        }
+
+                        index = aux;
+                }
+		
 		if(isTemp(ident)){
 			return;
 		}
@@ -190,7 +299,7 @@ public class Generador {
 		}
 
 		Tag tag = new Tag(getTag(), getTag());
-		int size = Var.getListVar(ident).get(Var.getListVar(ident).size()-1).getTam();
+		int size = Var.getLastVar(ident).getTam();
 
 		out.println("# Comprobacion de rango");
 		out.println("   if (" + index + " < 0) goto " + tag.getV() + ";");

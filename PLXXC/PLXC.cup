@@ -1,5 +1,6 @@
 import java_cup.runtime.*;
-
+import java.util.ArrayList;
+import java.util.List;
 
 action code {:
 	Variable var = new Variable(0,0);
@@ -48,6 +49,7 @@ non terminal Tag 	cond;
 non terminal 		listaDec;
 non terminal 		dec;
 non terminal 		tipo;
+non terminal List<String> arrayIni;
 non terminal String	dimensiones;
 non terminal String 	incremento;
 non terminal String	variable, numero;
@@ -321,6 +323,22 @@ asig 		::= 	IDENT:i ASIG exp:e1 		{:
 
 		|	IDENT:i AC exp:e CC ASIG exp:e1	{:
 								RESULT = Generador.assignment(Var.getVar(i), e, e1);
+							:}
+
+		|	IDENT:i ASIG AL arrayIni:a CL	{:
+								Generador.arrayInit(i, a);
+							:}
+
+		;
+
+arrayIni 	::=	exp:e				{:
+								RESULT = new ArrayList<String>();
+								RESULT.add(e);
+							:}
+
+		|	arrayIni:a COMA exp:e		{:
+								a.add(e);
+								RESULT = a;
 							:}
 		;
 

@@ -82,4 +82,8 @@ public class Var{
 		return variables.get(salida);
 	}
 
+	public static Variable getLastVar(String name){
+		return getListVar(name).get(getListVar(name).size()-1);
+	}
+
 }
