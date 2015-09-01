@@ -263,6 +263,67 @@ public class Generador {
 		return tmp;
 	}
 
+	public static Tag forIn(String e1, String tagFor, Object e2){
+		String tmp = getTemp(1);
+		int size = 0;
+		int tipo = 0, tipo2 = 0;
+		String array = "";
+		String ident = (e1.indexOf('[') == -1) ? e1 : e1.substring(0, e1.indexOf('['));
+
+		System.out.println("IDENT: " + e1 + " " + e2.toString());
+
+		if(e2 instanceof String){
+
+			if(!Var.exists(e2.toString())){
+                                error();
+                                halt();
+                                return new Tag(getTag(), getTag());
+                        }
+
+			if(!Var.getLastVar(e2.toString()).isArray()){
+				error();
+				halt();
+				return new Tag(getTag(), getTag());
+			}
+
+			array = e2.toString();
+			size = Var.getLastVar(array).getTam();
+			tipo = Var.getLastVar(ident).getTipo();
+			tipo2 = Var.getLastVar(array).getTipo();
+		}
+		else{
+			array = getTemp(Var.getLastVar(ident).getTipo());
+			size = ((List<String>) e2).size();
+			
+			int i = 0;
+			for(String iter : (List<String>) e2){
+				out.println("	" + array + "[" + i + "]" + " = " + iter + ";");
+				i++;
+			}
+		}
+
+		if(tipo != tipo2){
+			error();
+			halt();
+		}
+
+		assignment(tmp, "-1");
+		label(tagFor);
+		assignment(tmp, tmp + " + " + "1");
+		Tag m = condition(tmp, Tag.MEQ, Integer.toString(size));
+		label(m.getV());
+		
+		if(e1.indexOf('[') == -1){
+			assignment(e1, array + "[" + tmp + "]");
+		}
+		else{
+			String tmp2 = getTemp(Var.getLastVar(ident).getTipo());
+			assignment(tmp2, array + "[" + tmp + "]");
+			out.println("	" + e1 + " = " + tmp2 + ";");
+		}
+		return m;
+	}
+
 	public static void dimension(String ident, String index){
                 if(isArray(ident) && isArray(index)){
                         boolean flag = true;

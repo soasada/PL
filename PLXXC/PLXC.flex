@@ -41,7 +41,7 @@ Exponent = [eE] [+-]? [0-9]+
         "to"                                            { return new Symbol(sym.TO, Generador.getTag()); }
         "downto"                                        { return new Symbol(sym.DOWNTO, Generador.getTag()); }
         "step"                                          { return new Symbol(sym.STEP); }
-
+	"in"						{ return new Symbol(sym.IN, Generador.getTag()); }
 	
                                         /* Separators */
 

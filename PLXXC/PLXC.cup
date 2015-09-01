@@ -26,7 +26,7 @@ terminal 		PYC, COMA, POR, AL, CL, ASIG, AP, CP, DOSPUNTOS;
 terminal String 	IF, ELSE;
 terminal 		PRINT;
 terminal String 	DO, WHILE;
-terminal String		TO, STEP, DOWNTO;
+terminal String		TO, STEP, DOWNTO, IN;
 terminal String 	FOR;
 terminal 		MASMAS;
 terminal 		MENOSMENOS;
@@ -49,8 +49,10 @@ non terminal Tag 	cond;
 non terminal 		listaDec;
 non terminal 		dec;
 non terminal 		tipo;
+non terminal String 	forInIdent;
+non terminal Object 	forArray;
 non terminal List<String> arrayIni;
-non terminal String	dimensiones;
+non terminal String	dimensiones, dimensionesAsig;
 non terminal String 	incremento;
 non terminal String	variable, numero;
 non terminal String	asig;
@@ -175,6 +177,22 @@ sent		::=	exp:e PYC			{: :}
 								Generador.goTo(tagD);
 								Generador.label(((Tag)RESULT).getV());
 							:}
+
+		|	FOR:tagFor forInIdent:e1	{:
+
+							:}
+
+			IN:tagIN forArray:e2 DO		{:
+								RESULT = Generador.forIn(e1, tagFor, e2);
+							:}
+			
+			sent				{:
+								Generador.goTo(tagFor);
+								Generador.label(((Tag)RESULT).getF());
+								Generador.label(tagIN);
+								
+							:}
+			
 			
 		
 		|	PRINT AP exp:e1 CP PYC		{: 
@@ -194,12 +212,31 @@ sent		::=	exp:e PYC			{: :}
 
 		;
 
+forInIdent	::=	IDENT:i				{:
+								RESULT = i;
+							:}
+		
+		|	IDENT:i AC exp:e1 CC		{:
+								RESULT = i + "[" + e1 + "]";
+							:}
+		;
+
 stepPart	::=	STEP exp:e1			{:
 								RESULT = e1;
 							:}
 
 		|					{:
 								RESULT = "1";
+							:}
+
+		;
+
+forArray	::=	IDENT:i				{:
+								RESULT = i;
+							:}
+		
+		|	AL arrayIni:l CL		{:
+								RESULT = l;
 							:}
 
 		;
@@ -241,6 +278,10 @@ dec		::=	IDENT:i ASIG exp:e1		{:
 		;
 
 dimensiones	::=	AC NUMERO:n CC 			{:
+								RESULT = n.toString();
+							:}
+
+		|	dimensiones:d AC NUMERO:n CC	{:
 								RESULT = n.toString();
 							:}
 		;
@@ -321,12 +362,22 @@ asig 		::= 	IDENT:i ASIG exp:e1 		{:
 								RESULT = Generador.assignment(Var.getVar(i), e1);
                                                         :}
 
-		|	IDENT:i AC exp:e CC ASIG exp:e1	{:
-								RESULT = Generador.assignment(Var.getVar(i), e, e1);
-							:}
+		|	IDENT:i dimensionesAsig:a ASIG exp:e1	{:
+									RESULT = Generador.assignment(Var.getVar(i), a, e1);
+								:}
 
 		|	IDENT:i ASIG AL arrayIni:a CL	{:
 								Generador.arrayInit(i, a);
+							:}
+
+		;
+
+dimensionesAsig ::=	AC exp:e CC			{:
+								RESULT = e;
+							:}
+
+		|	dimensionesAsig:a AC exp:e CC	{:
+								RESULT = e;
 							:}
 
 		;
@@ -355,7 +406,7 @@ variable	::=	IDENT:i				{:
 
 		|	IDENT:i AC exp:e CC		{:
 								if(Var.exists(i)){
-									String aux = Generador.getTemp(Var.getListVar(i).get(Var.getListVar(i).size()-1).getTipo());
+									String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
 									Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
 									RESULT = aux;
 								}
