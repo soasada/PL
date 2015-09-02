@@ -7,7 +7,6 @@
 *.jar
 *.war
 *.ear
-*.pl
 *.plx
 *.ctd
 *.java~
@@ -20,3 +19,4 @@ plxc
 Yylex.java
 parser.java
 sym.java
+a0.pl
