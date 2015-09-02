@@ -1,7 +1,7 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-#use warnings;
+use warnings;
 #use diagnostics;
 #use autodie;
 
@@ -33,7 +33,7 @@ foreach $plxcFile (@files){
 }
 
 if($cont == $cont2){
-	print "Éxito!\n";
+	print "Éxito!, todos los test superado " . $cont . "/" . $cont2 . "\n";
 }
 else{
 	print "Has tenido algún error, número de test pasados: " . $cont . " de " . $cont2 . "\n";
