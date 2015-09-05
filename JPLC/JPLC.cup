@@ -1,0 +1,183 @@
+import java_cup.runtime.*;
+
+action code {:
+	
+	int contador = 0;
+:}
+
+/* Terminales */
+
+terminal 				INT;
+terminal 				PYC, COMA, POR, AL, CL, ASIG, AP, CP;
+terminal				IF, ELSE;
+terminal				WHILE;
+terminal 				MAIN, RETURN;
+terminal 				MAS, MENOS, DIV, UMINUS;
+terminal				MEQ, MAQ;
+
+terminal Integer		NUMERO;
+terminal Double 		NUMEROF;
+terminal String 		IDENT;
+
+/* No Terminales */
+
+non terminal			listaSent;
+non terminal			sent;
+non terminal 			listaDec;
+non terminal			dec;
+non terminal Integer	tipo;
+non terminal String		asig;
+non terminal String		exp;
+non terminal 			funcion;
+non terminal 			invokeFunc;
+non terminal 			params;
+non terminal 	 		nombreF;
+non terminal String		variable;
+
+/* Precedencia */
+
+precedence left 		COMA;
+precedence right		ASIG;
+precedence left  		MAS, MENOS;
+precedence left  		POR, DIV;
+precedence left  		UMINUS;
+precedence left  		ELSE;
+
+/* Gramatica */
+
+listaSent 	::= 		sent
+
+			|			listaSent sent
+			;
+
+sent		::=			exp:e PYC			{:
+												Generador.pop();
+											:}
+
+			| 			funcion AL			{:
+
+											:}
+
+						listaSent			{:
+
+											:}
+
+						CL					{:
+												Generador.endMethod();
+											:}
+
+            |           RETURN exp:e1 PYC 	    {:
+                                                    Generador.ireturn();
+                                                    Generador.nop();
+                                                    Generador.limitStack();
+                                                    Generador.limitLocal();
+                                                :}
+			|			listaDec PYC
+
+			;
+
+invokeFunc	::=			IDENT:i AP exp:e CP 		{:
+														Generador.invoke(i);
+													:}
+			;
+
+listaDec    ::=     tipo dec
+
+            |       listaDec COMA dec
+            ;
+
+dec         ::=     variable:i							{:
+															Generador.sipush("0");
+                                                            Var.add(i, "0", 1);
+                                                            Generador.istore(Integer.toString(Var.getVarTam()-1));
+														:}
+
+			|		variable:i ASIG exp:e1				{:
+															Var.add(i, e1, 1);
+															Generador.istore(Integer.toString(Var.getVarTam()-1));
+														:}
+			;
+
+exp			::=			exp:e1 MAS exp:e2		{:
+													RESULT = Generador.iadd();
+												:}
+
+			|			exp:e1 MENOS exp:e2		{:
+													Generador.isub();
+												:}
+
+			|			exp:e1 POR exp:e2		{:
+													RESULT = Generador.imul();
+												:}
+
+			|			exp:e1 DIV exp:e2		{:
+													Generador.idiv();
+												:}
+
+			|			MENOS exp:e1			{:
+													Generador.sipush("-1");
+													Generador.imul();
+												:} %prec UMINUS
+
+			|			asig					{:
+
+												:}
+
+            |           invokeFunc 		      	{:
+
+                                            	:}
+
+			|			AP exp:e1 CP			{:
+													
+												:}
+
+			|			variable:i 				{:
+													Generador.iload(Var.indexOf(i));
+												:}
+
+			|			NUMERO:n				{:
+													Generador.sipush(n.toString());
+												:}
+
+			;
+
+funcion		::=			tipo:t nombreF AP params CP 	{:
+															
+														:}
+
+			;
+
+tipo		::=		INT									{:
+															RESULT = new Integer(1);
+														:}
+			;
+
+variable 	::=		IDENT:i								{:
+															RESULT = i;
+														:}
+				
+			;
+
+nombreF		::=		MAIN								{:
+															Generador.funcion("main");
+														:}
+
+			|		IDENT:i								{:
+															Generador.funcion(i);
+														:}		
+			;
+
+params		::=		tipo:t IDENT:i						{:
+															Var.add(i, "0", t);
+														:}
+		
+			|		params COMA tipo:t IDENT:i			{:
+															Var.add(i, "0", t);
+														:}
+			;
+
+asig		::=		IDENT:i ASIG exp:e1					{:
+															Generador.dup();
+															Generador.istore(Var.indexOf(i));
+														:}
+			;
