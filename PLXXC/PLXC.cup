@@ -7,6 +7,11 @@ action code {:
 
 	/* Casting flags */
 	boolean flagFloat = false;
+
+	String switchVar = "";
+	String switchTag = "";
+	
+	int contCase = 0;
 :}
 
 parser code {:
@@ -19,22 +24,25 @@ parser code {:
 
 /* Terminales */
 
-terminal 		INT;
-terminal 		FLOAT;
-terminal 		AC, CC;
-terminal 		PYC, COMA, POR, AL, CL, ASIG, AP, CP, DOSPUNTOS;
+terminal 			INT;
+terminal 			FLOAT;
+terminal 			AC, CC;
+terminal 			PYC, COMA, POR, AL, CL, ASIG, AP, CP, DOSPUNTOS;
 terminal String 	IF, ELSE;
-terminal 		PRINT;
+terminal 			PRINT;
 terminal String 	DO, WHILE;
 terminal String		TO, STEP, DOWNTO, IN;
 terminal String 	FOR;
-terminal 		MASMAS;
-terminal 		MENOSMENOS;
-terminal 		MAS, MENOS, NOT, DIV, MOD, UMINUS;
-terminal 		MEQ, MAQ, MEOQ, MAOQ;
-terminal 		EQ, NEQ;
-terminal 		AND;
-terminal 		OR;
+terminal String		SWITCH;
+terminal String		CASE;
+terminal 			DEFAULT, BREAK;
+terminal	 		MASMAS;
+terminal 			MENOSMENOS;
+terminal 			MAS, MENOS, NOT, DIV, MOD, UMINUS;
+terminal 			MEQ, MAQ, MEOQ, MAOQ;
+terminal 			EQ, NEQ;
+terminal 			AND;
+terminal 			OR;
 
 terminal Integer 	NUMERO;
 terminal Double 	NUMEROF;
@@ -42,23 +50,26 @@ terminal String 	IDENT;
 
 /* No terminales */
 
-non terminal 		listaSent;
-non terminal 		sent;
-non terminal 		elsePart;
-non terminal Tag 	cond;
-non terminal 		listaDec;
-non terminal 		dec;
-non terminal 		tipo;
-non terminal String 	forInIdent;
-non terminal Object 	forArray;
-non terminal List<String> arrayIni;
-non terminal List<Integer> dimensiones;
-non terminal String dimensionesAsig;
-non terminal String 	incremento;
-non terminal String	variable, numero;
-non terminal String	asig;
-non terminal String	casting;
-non terminal String 	exp, stepPart;
+non terminal 				listaSent;
+non terminal 				sent;
+non terminal 				elsePart;
+non terminal Tag 			cond;
+non terminal 				listaDec;
+non terminal 				dec;
+non terminal 				tipo;
+non terminal String 		forInIdent;
+non terminal Object 		forArray;
+non terminal List<String>	arrayIni;
+non terminal String 		dimensiones;
+non terminal String 		dimensionesAsig;
+non terminal String 		incremento;
+non terminal String			variable, numero;
+non terminal String			asig;
+non terminal String			casting;
+non terminal String 		exp, stepPart;
+non terminal String			varOrNum;
+non terminal String 		case;
+non terminal String			listaCase;
 
 /* Precedencia */
 
@@ -194,6 +205,26 @@ sent		::=			exp:e PYC			{: :}
 														Generador.label(tagIN);
 								
 													:}
+
+			|			SWITCH:tagS AP varOrNum:v CP AL	{:
+															switchVar = v;
+															switchTag = tagS;
+														:}
+						
+						listaCase:l					{:
+														Generador.label(Generador.getTag());
+													:}
+
+						DEFAULT DOSPUNTOS			{:
+
+													:}
+
+						sent						{:
+
+													:}
+						CL							{:
+														Generador.label(switchTag);
+													:}
 			
 			
 		
@@ -223,6 +254,44 @@ forInIdent	::=			IDENT:i				{:
 											:}
 			;
 
+case 		::=			CASE:c varOrNum:v DOSPUNTOS		{:
+															RESULT = Generador.getTag();
+															Generador.printLine("	if (" + switchVar + " != " + v + ")" + " goto " + c + ";");
+															if(contCase >= 1){
+																Generador.label(RESULT.toString());
+															}
+															contCase++;
+														:}
+
+						listaSent					{:
+
+													:}
+
+						BREAK PYC					{:
+														Generador.goTo(switchTag);
+														Generador.label(c);
+													:}
+
+			;
+
+listaCase	::=		case:c							{:
+														RESULT = c;
+													:}
+			
+			|		listaCase case:c				{:
+														RESULT = c;
+													:}
+			;
+
+varOrNum	::=		variable:i				{:
+												RESULT = i;
+											:}
+
+			|		numero:n				{:
+												RESULT = n;
+											:}
+			;
+
 stepPart	::=	STEP exp:e1					{:
 												RESULT = e1;
 											:}
@@ -233,23 +302,23 @@ stepPart	::=	STEP exp:e1					{:
 
 			;
 
-forArray	::=	IDENT:i				{:
-								RESULT = i;
-							:}
+forArray	::=	IDENT:i						{:
+												RESULT = i;
+											:}
 		
-		|	AL arrayIni:l CL		{:
-								RESULT = l;
-							:}
+			|	AL arrayIni:l CL			{:
+												RESULT = l;
+											:}
 
-		;
+			;
 
 tipo            ::=     INT                             {:
-								var = new Variable(Var.getLevel(), Variable.INTEGER); 
-							:}
+															var = new Variable(Var.getLevel(), Variable.INTEGER); 
+														:}
 								
                 |       FLOAT                           {: 
-								var = new Variable(Var.getLevel(), Variable.REAL);
-							:}
+															var = new Variable(Var.getLevel(), Variable.REAL);
+														:}
                 ;
 
 listaDec	::=	dec
@@ -280,14 +349,13 @@ dec		::=		IDENT:i ASIG exp:e1		{:
 		;
 
 dimensiones	::=		AC NUMERO:n CC 				{:
-													ArrayList
 													RESULT = n.toString();
 												:}
 
-		|	dimensiones:d AC NUMERO:n CC		{:
-													RESULT = n.toString();
-												:}
-		;
+			|	dimensiones:d AC NUMERO:n CC		{:
+														RESULT = n.toString();
+													:}
+			;
 
 
 elsePart 	::= 	ELSE sent
@@ -375,29 +443,29 @@ asig 		::= 	IDENT:i ASIG exp:e1 				{:
 
 		;
 
-dimensionesAsig ::=	AC exp:e CC			{:
-								RESULT = e;
-							:}
+dimensionesAsig 	::=		AC exp:e CC						{:
+																RESULT = e;
+															:}
 
-		|	dimensionesAsig:a AC exp:e CC	{:
-								RESULT = e;
-							:}
+					|		dimensionesAsig:a AC exp:e CC	{:
+																RESULT = e;
+															:}
 
-		;
+					;
 
-arrayIni 	::=	exp:e				{:
-								RESULT = new ArrayList<String>();
-								RESULT.add(e);
-							:}
+arrayIni 			::=		exp:e							{:
+																RESULT = new ArrayList<String>();
+																RESULT.add(e);
+															:}
 
-		|	arrayIni:a COMA exp:e		{:
-								a.add(e);
-								RESULT = a;
-							:}
-		;
+					|	arrayIni:a COMA exp:e				{:
+																a.add(e);
+																RESULT = a;
+															:}
+					;
 
-variable	::=	IDENT:i				{:
-								if(Var.exists(i)){
+variable	::=	IDENT:i										{:
+																if(Var.exists(i)){
                                                                         RESULT = Var.getVar(i);
                                                                 }
                                                                 else{
@@ -405,21 +473,21 @@ variable	::=	IDENT:i				{:
                                                                         Generador.halt();
                                                                 }
 
-							:}
+															:}
 
-		|	IDENT:i AC exp:e CC		{:
-								if(Var.exists(i)){
-									String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
-									Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
-									RESULT = aux;
-								}
-								else{
-									Generador.error();
-									Generador.halt();
-								}
-							:}
+			|	IDENT:i AC exp:e CC							{:
+																if(Var.exists(i)){
+																	String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
+																	Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
+																	RESULT = aux;
+																}
+																else{
+																	Generador.error();
+																	Generador.halt();
+																}
+															:}
 
-		;
+			;
 
 incremento	::=	MASMAS IDENT:i1                 {:
                                                                 RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");

@@ -11,7 +11,7 @@ my $ctdFile;
 my $cont = 0;
 my $cont2 = 0;
 
-my @files = </home/z0rtecx/Downloads/plx-test/*>;
+my @files = </home/z0rtecx/Downloads/plxc-init-2015/*>;
 foreach $plxcFile (@files){
 	if($plxcFile =~ /\.plx$/i){
 		$ctdFile = $plxcFile;
