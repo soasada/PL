@@ -1,7 +1,16 @@
-int polinomio(int x) {
-    return 1*x*x+2*x+3;
-}
-
 int main(int x) {
-    return polinomio(x);
+    int suma;
+    suma = 0;
+    int i=0;
+    while (x>i) {
+        int j=0, k=0;
+		while (x>j) 
+		   while (x>k) {
+		      j = j+1;
+		      k = k+1;
+		      suma = suma + i + j + k;
+		   }   
+		i = i+1;   
+    }
+    return suma ;
 }

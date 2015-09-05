@@ -109,12 +109,18 @@ public class Generador {
 		out.println("	ifne " + l);
 	}
 
-	public static void ifge(String l){
-		out.println("	ifge " + l);
+	public static Tag ifge(){
+		Tag tag = new Tag(getTag(), getTag());
+		Var.pop();
+		out.println("	ifgt " + tag.getV());
+		return tag;
 	}
 
-	public static void ifle(String l){
-		out.println("	ifle " + l);
+	public static Tag ifle(){
+		Tag tag = new Tag(getTag(), getTag());
+		Var.pop();
+		out.println("	iflt " + tag.getV());
+		return tag;
 	}
 
 	public static void invoke(String f){
@@ -134,7 +140,7 @@ public class Generador {
 	}
 
 	public static void endMethod(){
-		out.println(".end method");
+		out.println(".end method\n");
 	}
 
 	public static boolean isInteger(String in){

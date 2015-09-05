@@ -64,4 +64,10 @@ public class Var{
 	public static Stack<String> getPila(){
 		return pila;
 	}
+
+	public static void clear(){
+		maxPila = 0;
+		pila.clear();
+		variables.clear();
+	}
 }

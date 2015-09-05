@@ -52,7 +52,8 @@ non terminal 		tipo;
 non terminal String 	forInIdent;
 non terminal Object 	forArray;
 non terminal List<String> arrayIni;
-non terminal String	dimensiones, dimensionesAsig;
+non terminal List<Integer> dimensiones;
+non terminal String dimensionesAsig;
 non terminal String 	incremento;
 non terminal String	variable, numero;
 non terminal String	asig;
@@ -78,158 +79,159 @@ listaSent	::=	sent
 		;
 
 
-sent		::=	exp:e PYC			{: :}
+sent		::=			exp:e PYC			{: :}
 
-		|	IF:tagIf AP cond:c CP 		{: 
-								Generador.label(c.getV());
-							:}
+			|			IF:tagIf AP cond:c CP 		{: 
+														Generador.label(c.getV());
+													:}
 			
-			sent				{:
-								Generador.goTo(tagIf);
-								Generador.label(c.getF());
-							:}
-			elsePart			{:
-								Generador.label(tagIf);
-							:}
+						sent						{:
+														Generador.goTo(tagIf);
+														Generador.label(c.getF());
+													:}
 
-		|	WHILE:tagWhile AP		{:
-								Generador.label(tagWhile);
-							:}
+						elsePart					{:
+														Generador.label(tagIf);
+													:}
 
-			cond:c CP			{:
-								Generador.label(c.getV());
-							:}
+			|			WHILE:tagWhile AP			{:
+														Generador.label(tagWhile);
+													:}
 
-			sent				{:
-								Generador.goTo(tagWhile);
-								Generador.label(c.getF());
-							:}
+						cond:c CP					{:
+														Generador.label(c.getV());
+													:}
 
-		|	DO:tagDo			{:
-								Generador.label(tagDo);
-							:}
+						sent						{:
+														Generador.goTo(tagWhile);
+														Generador.label(c.getF());
+													:}
 
-			sent				{: :}
+			|			DO:tagDo					{:
+														Generador.label(tagDo);
+													:}
 
-			WHILE AP cond:c CP PYC		{:
-								Generador.label(c.getV());
-								Generador.goTo(tagDo);
-								Generador.label(c.getF());
-							:}
+						sent						{: :}
 
-		|	FOR:tagFor AP exp:e1 PYC	{:
-								Generador.label(tagFor);
-							:}
+						WHILE AP cond:c CP PYC		{:
+														Generador.label(c.getV());
+														Generador.goTo(tagDo);
+														Generador.label(c.getF());
+													:}
 
-			cond:c1 PYC			{:
-								RESULT = Generador.getTag();
-								Generador.label(RESULT.toString());
-							:}
+			|			FOR:tagFor AP exp:e1 PYC	{:
+														Generador.label(tagFor);
+													:}
 
-			exp:e2 CP			{:
-								Generador.goTo(tagFor);
-								Generador.label(c1.getV());
-							:}
+						cond:c1 PYC					{:
+														RESULT = Generador.getTag();
+														Generador.label(RESULT.toString());
+													:}
 
-			sent				{:
-								Generador.goTo(RESULT.toString());
-								Generador.label(c1.getF());
-							:}
+						exp:e2 CP					{:
+														Generador.goTo(tagFor);
+														Generador.label(c1.getV());
+													:}
 
-		|	FOR:tagFor exp:e1		{:
+								sent				{:
+														Generador.goTo(RESULT.toString());
+														Generador.label(c1.getF());
+													:}
+
+			|			FOR:tagFor exp:e1			{:
 								
-							:}
+													:}
 
-			TO:tagTo exp:e2			{:
-								Generador.label(tagFor);
-								RESULT = Generador.condition(e2, Tag.MEQ, e1);
-								Generador.label(tagTo);
-							:}
+						TO:tagTo exp:e2				{:
+														Generador.label(tagFor);
+														RESULT = Generador.condition(e2, Tag.MEQ, e1);
+														Generador.label(tagTo);
+													:}
 
-			stepPart:p DO			{:
-								Generador.assignment(Var.getVar(e1), e1 + " + " + p);
-                                                                Generador.goTo(tagFor);
-                                                                Generador.label(((Tag)RESULT).getF());
-							:}
+						stepPart:p DO				{:
+														Generador.assignment(Var.getVar(e1), e1 + " + " + p);
+                                                        Generador.goTo(tagFor);
+                                                        Generador.label(((Tag)RESULT).getF());
+													:}
 			
-			sent				{:
-								Generador.goTo(tagTo);
-								Generador.label(((Tag)RESULT).getV());
-							:}
+						sent						{:
+														Generador.goTo(tagTo);
+														Generador.label(((Tag)RESULT).getV());
+													:}
 
-		|	FOR:tagFor exp:e1		{:
+			|			FOR:tagFor exp:e1			{:
 								
-							:}
+													:}
 
-			DOWNTO:tagD exp:e2		{:
-								Generador.label(tagFor);
-								RESULT = Generador.condition(e1, Tag.MEQ, e2);
-                                                                Generador.label(tagD);
-							:}
+						DOWNTO:tagD exp:e2			{:
+														Generador.label(tagFor);
+														RESULT = Generador.condition(e1, Tag.MEQ, e2);
+                                                        Generador.label(tagD);
+													:}
 
-			stepPart:p DO			{:
-								Generador.assignment(Var.getVar(e1), e1 + " - " + p);
-                                                                Generador.goTo(tagFor);
-                                                                Generador.label(((Tag)RESULT).getF());
-							:}
+						stepPart:p DO				{:
+														Generador.assignment(Var.getVar(e1), e1 + " - " + p);
+                                                        Generador.goTo(tagFor);
+                                                        Generador.label(((Tag)RESULT).getF());
+													:}
 
-			sent				{:
-								Generador.goTo(tagD);
-								Generador.label(((Tag)RESULT).getV());
-							:}
+						sent						{:
+														Generador.goTo(tagD);
+														Generador.label(((Tag)RESULT).getV());
+													:}
 
-		|	FOR:tagFor forInIdent:e1	{:
+			|			FOR:tagFor forInIdent:e1	{:
 
-							:}
-
-			IN:tagIN forArray:e2 DO		{:
-								RESULT = Generador.forIn(e1, tagFor, e2);
-							:}
+													:}
+	
+						IN:tagIN forArray:e2 DO		{:
+														RESULT = Generador.forIn(e1, tagFor, e2);
+													:}	
 			
-			sent				{:
-								Generador.goTo(tagFor);
-								Generador.label(((Tag)RESULT).getF());
-								Generador.label(tagIN);
+						sent						{:
+														Generador.goTo(tagFor);
+														Generador.label(((Tag)RESULT).getF());
+														Generador.label(tagIN);
 								
-							:}
+													:}
 			
 			
 		
-		|	PRINT AP exp:e1 CP PYC		{: 
-								Generador.print(e1); 
-							:}
+			|			PRINT AP exp:e1 CP PYC		{: 
+														Generador.print(e1); 
+													:}
 
-		|	AL 				{: 
-								Var.upLevel(); 
-							:}
+			|			AL 							{: 
+														Var.upLevel(); 
+													:}
 			
-			listaSent CL			{:
-								Var.clear(Var.getLevel()); 
-								Var.downLevel();
-							:}
+						listaSent CL				{:
+														Var.clear(Var.getLevel()); 
+														Var.downLevel();
+													:}
 
-		|	tipo listaDec PYC		{: :}
+			|			tipo listaDec PYC			{: :}
 
-		;
+			;	
 
-forInIdent	::=	IDENT:i				{:
-								RESULT = i;
-							:}
+forInIdent	::=			IDENT:i				{:
+												RESULT = i;
+											:}
 		
-		|	IDENT:i AC exp:e1 CC		{:
-								RESULT = i + "[" + e1 + "]";
-							:}
-		;
+			|	IDENT:i AC exp:e1 CC		{:
+												RESULT = i + "[" + e1 + "]";
+											:}
+			;
 
-stepPart	::=	STEP exp:e1			{:
-								RESULT = e1;
-							:}
+stepPart	::=	STEP exp:e1					{:
+												RESULT = e1;
+											:}
 
-		|					{:
-								RESULT = "1";
-							:}
+			|								{:
+												RESULT = "1";
+											:}
 
-		;
+			;
 
 forArray	::=	IDENT:i				{:
 								RESULT = i;
@@ -254,36 +256,37 @@ listaDec	::=	dec
 		|	listaDec COMA dec
 		;
 
-dec		::=	IDENT:i ASIG exp:e1		{:
-								Var.addVar(i, var);
-								Generador.assignment(Var.getVar(i), e1);
-							:}
+dec		::=		IDENT:i ASIG exp:e1		{:
+											Var.addVar(i, var);
+											Generador.assignment(Var.getVar(i), e1);
+										:}
 
-		|	IDENT:i				{:	
-								Var.addVar(i, var);
-							:}
+		|		IDENT:i					{:	
+											Var.addVar(i, var);
+										:}
 
-		| IDENT:i dimensiones:d ASIG exp:e1	{:
-								var.setIsArray(true);
-								var.setTam(new Integer(d));
-								Var.addVar(i, var);
-								Generador.assignment(Var.getVar(i), e1);
-							:}
+		| IDENT:i dimensiones:d ASIG exp:e1		{:
+													var.setIsArray(true);
+													var.setTam(new Integer(d));
+													Var.addVar(i, var);
+													Generador.assignment(Var.getVar(i), e1);
+												:}
 
-		|	IDENT:i dimensiones:d		{:
-								var.setIsArray(true);
-								var.setTam(new Integer(d));
-								Var.addVar(i, var);
-							:}
+		|	IDENT:i dimensiones:d				{:
+													var.setIsArray(true);
+													var.setTam(new Integer(d));
+													Var.addVar(i, var);
+												:}
 		;
 
-dimensiones	::=	AC NUMERO:n CC 			{:
-								RESULT = n.toString();
-							:}
+dimensiones	::=		AC NUMERO:n CC 				{:
+													ArrayList
+													RESULT = n.toString();
+												:}
 
-		|	dimensiones:d AC NUMERO:n CC	{:
-								RESULT = n.toString();
-							:}
+		|	dimensiones:d AC NUMERO:n CC		{:
+													RESULT = n.toString();
+												:}
 		;
 
 
@@ -291,84 +294,84 @@ elsePart 	::= 	ELSE sent
 	   	|
 	   	;
 
-exp		::=	exp:e1 MAS exp:e2		{:	
-								RESULT = Generador.arithmetic(e1, e2, Generador.MAS);
-							:}
+exp		::=	exp:e1 MAS exp:e2			{:	
+											RESULT = Generador.arithmetic(e1, e2, Generador.MAS);
+										:}
 
-		|	exp:e1 MENOS exp:e2		{:
-								RESULT = Generador.arithmetic(e1, e2, Generador.MENOS);
-							:}
+		|	exp:e1 MENOS exp:e2			{:
+											RESULT = Generador.arithmetic(e1, e2, Generador.MENOS);
+										:}
 
-		|	exp:e1 POR exp:e2		{:
-								RESULT = Generador.arithmetic(e1, e2, Generador.MULT);
-							:}
+		|	exp:e1 POR exp:e2			{:
+											RESULT = Generador.arithmetic(e1, e2, Generador.MULT);
+										:}
 
-		| 	exp:e1 DIV exp:e2		{:
-								flagFloat = false;
-								RESULT = Generador.arithmetic(e1, e2, Generador.DIV);
-							:}
+		| 	exp:e1 DIV exp:e2			{:
+											flagFloat = false;
+											RESULT = Generador.arithmetic(e1, e2, Generador.DIV);
+										:}
 
-		|	exp:e1 MOD exp:e2		{:
-								String t1 = Generador.arithmetic(e1, e2, Generador.DIV);
-								String t2 = Generador.arithmetic(t1, e2, Generador.MULT);
-								RESULT = Generador.arithmetic(e1, t2, Generador.MENOS);
-							:}
+		|	exp:e1 MOD exp:e2			{:
+											String t1 = Generador.arithmetic(e1, e2, Generador.DIV);
+											String t2 = Generador.arithmetic(t1, e2, Generador.MULT);
+											RESULT = Generador.arithmetic(e1, t2, Generador.MENOS);
+										:}
 
-		| 	MENOS exp:e1			{:
-								RESULT = Generador.arithmetic("-" + e1, "", 0);
-							:} %prec UMINUS
+		| 	MENOS exp:e1				{:
+											RESULT = Generador.arithmetic("-" + e1, "", 0);
+										:} %prec UMINUS
 		
-		| 	AP exp:e1 CP			{:
-								RESULT = e1;
-							:}
+		| 	AP exp:e1 CP				{:
+											RESULT = e1;
+										:}
 
-		|	casting:n			{: 
-								RESULT = n; 
-							:}
+		|	casting:n					{: 
+											RESULT = n; 
+										:}
 
-		|	incremento:i			{:
-								RESULT = i;
-							:}
+		|	incremento:i				{:
+											RESULT = i;
+										:}
 		
-		|	asig:a				{:
-								RESULT = a;
-							:}
+		|	asig:a						{:
+											RESULT = a;
+										:}
 
-		|	variable:v			{:
-								RESULT = v;
-							:}
+		|	variable:v					{:
+											RESULT = v;
+										:}
 
-		|	numero:n			{:
-								RESULT = n;
-							:}
+		|	numero:n					{:
+											RESULT = n;
+										:}
 
 		;
 
-numero		::=	NUMERO:n			{:
-								if(flagFloat){
-									RESULT = Generador.casting(n.toString(), Variable.REAL);
-								}
-								else{
-									RESULT = n.toString();
-								}
-							:}
+numero		::=		NUMERO:n				{:
+												if(flagFloat){
+													RESULT = Generador.casting(n.toString(), Variable.REAL);
+												}
+												else{
+													RESULT = n.toString();
+												}
+											:}
 		
-		|	NUMEROF:n			{:
-								RESULT = n.toString();
-							:}
+		|		NUMEROF:n					{:
+												RESULT = n.toString();
+											:}
 		;
 
-asig 		::= 	IDENT:i ASIG exp:e1 		{:
-								RESULT = Generador.assignment(Var.getVar(i), e1);
+asig 		::= 	IDENT:i ASIG exp:e1 				{:
+															RESULT = Generador.assignment(Var.getVar(i), e1);
                                                         :}
 
-		|	IDENT:i dimensionesAsig:a ASIG exp:e1	{:
-									RESULT = Generador.assignment(Var.getVar(i), a, e1);
-								:}
+		|		IDENT:i dimensionesAsig:a ASIG exp:e1	{:
+															RESULT = Generador.assignment(Var.getVar(i), a, e1);
+														:}
 
-		|	IDENT:i ASIG AL arrayIni:a CL	{:
-								Generador.arrayInit(i, a);
-							:}
+		|		IDENT:i ASIG AL arrayIni:a CL			{:
+															Generador.arrayInit(i, a);
+														:}
 
 		;
 

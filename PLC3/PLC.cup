@@ -1,0 +1,166 @@
+import java_cup.runtime.*;
+
+parser code {:
+
+	private SymbolTable symbolTable;
+
+	public parser(Yylex s, SymbolTable t){
+		this(s);
+		symbolTable = t;
+	}
+:}
+
+
+/* Terminales */
+
+terminal INT;
+terminal AC, CC;
+terminal PYC, POR, AL, CL, ASIG, AP, CP;
+terminal String IF, ELSE;
+terminal PRINT;
+terminal String DO, WHILE;
+terminal TO, STEP, DOWNTO;
+terminal String FOR;
+terminal MASMAS;
+terminal MENOSMENOS;
+terminal MAS, MENOS, NOT, DIV, MOD, UMINUS;
+terminal MEQ, MAQ, MEOQ, MAOQ;
+terminal EQ, NEQ;
+terminal AND;
+terminal OR;
+
+terminal Integer NUMERO;
+terminal Double NUMEROF;
+terminal String IDENT;
+
+/* No terminales */
+
+non terminal listaSent;
+non terminal sent;
+non terminal elsePart;
+non terminal Tag cond;
+non terminal Exp exp;
+non terminal Dec dec;
+non terminal String variable;
+
+/* Precedencia */
+
+precedence left  MAS, MENOS;
+precedence left  POR, DIV;
+precedence left  UMINUS;
+precedence left  AND, OR;
+precedence left  ELSE;
+precedence right NOT;
+
+
+/* Gramatica */
+
+listaSent	::=		sent
+			|		listaSent sent
+			;
+
+
+sent		::=		exp:e PYC							{: :}
+
+			|		PRINT AP exp:e1 CP PYC				{: 
+														:}
+
+			|		dec:d PYC							{: :}
+
+			|		AL listaSent CL						{: :}
+
+			;
+
+dec			::=		INT variable:i						{:
+															Variable var = new Variable("0", 1);
+															symbolTable.add(i, var);
+															RESULT = new DInt(i);
+														:}
+			
+			|		INT variable:i ASIG exp:e1			{:
+															
+														:}
+			
+			;
+
+
+elsePart 	::= 	ELSE sent
+	   		|
+	   		;
+
+exp			::=		exp:e1 MAS exp:e2		{:
+												EAdd suma = new EAdd(e1, e2);
+												suma.generate();
+											:}
+
+			|		exp:e1 MENOS exp:e2		{:
+											:}
+
+			|		exp:e1 POR exp:e2		{:
+											:}
+
+			| 		exp:e1 DIV exp:e2		{:
+											:}
+
+			| 		MENOS exp:e1			{:
+											:} %prec UMINUS
+		
+			| 		AP exp:e1 CP			{:
+											:}
+
+			|		IDENT:i ASIG exp:e1		{:
+											:}
+
+			|		variable:i				{:
+											:}
+
+			|		NUMERO:n				{:
+												RESULT = new EInt(n);
+											:}
+
+			|		NUMEROF:n				{:
+												RESULT = new EDouble(n);
+											:}
+			;
+
+variable 	::=		IDENT:i					{:
+												RESULT = i;
+											:}
+			;
+
+cond 		::=	exp:e1 EQ exp:e2			{:
+											:}
+
+			|	exp:e1 NEQ exp:e2			{:
+											:}
+
+			| 	exp:e1 MEQ exp:e2			{:
+											:}
+
+			|	exp:e1 MEOQ exp:e2			{:
+											:}
+
+			| 	exp:e1 MAQ exp:e2			{:
+											:}
+
+			| 	exp:e1 MAOQ exp:e2			{:
+											:}
+
+			|	NOT cond:c					{:
+											:}
+	
+			| 	cond:c1 AND					{:
+											:}
+
+				cond:c2						{:
+											:}
+
+			|	cond:c1 OR					{:
+											:}
+
+				cond:c2						{:
+											:}
+
+			|	AP cond:c CP				{:
+											:}
+			;
