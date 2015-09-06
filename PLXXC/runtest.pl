@@ -26,6 +26,9 @@ foreach $plxcFile (@files){
 		if($salida1 eq $salida2){
 			$cont++;
 		}
+		else{
+			print "\n*********\n" . "ERROR\n" . $plxcFile . "\n*********\n";
+		}
 		
 		$cont2++;
 

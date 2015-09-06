@@ -236,7 +236,17 @@ public class Generador {
 										out.println("	" + tmp + " = " + arg1 + " *r " + arg2 + ";");
 										break;
 								case DIV:
-										out.println("	" + tmp + " = " + arg1 + " /r " + arg2 + ";");
+										String value = "";
+										if(isIdent(arg2) || isTemp(arg2)){
+											
+										}
+										if(isZero(arg2)){
+											error();
+											halt();
+										}
+										else{
+											out.println("	" + tmp + " = " + arg1 + " /r " + arg2 + ";");
+										}
 										break;
 								default:
 										out.println("	" + tmp + " = " + arg1 + ";");
@@ -254,7 +264,13 @@ public class Generador {
 										out.println("   " + tmp + " = " + arg1 + " * " + arg2 + ";");
 										break;
 								case DIV:
-										out.println("   " + tmp + " = " + arg1 + " / " + arg2 + ";");
+										if(isZero(arg2)){
+											error();
+											halt();
+										}
+										else{
+											out.println("   " + tmp + " = " + arg1 + " / " + arg2 + ";");
+										}
 										break;
 								default:
 										out.println("	" + tmp + " = " + arg1 + ";");
@@ -458,6 +474,13 @@ public class Generador {
 				Pattern p = Pattern.compile("[_a-zA-Z]+(?:\\[[_a-zA-Z0-9]*\\])+");
 
 				return Pattern.matches(p.pattern(), in);
+		}
+
+		public static boolean isZero(String in){
+
+     		Pattern p = Pattern.compile("[0]*\\.?[0]*");
+
+     		return Pattern.matches(p.pattern(), in);
 		}
 
 		public static int checkExp(String in){

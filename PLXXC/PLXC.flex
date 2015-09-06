@@ -46,7 +46,8 @@ Exponent = [eE] [+-]? [0-9]+
 		"case"											{ return new Symbol(sym.CASE, Generador.getTag()); }
 		"break"											{ return new Symbol(sym.BREAK); }
 		"default"										{ return new Symbol(sym.DEFAULT); }
-		
+		"typedef"										{ return new Symbol(sym.TYPEDEF); }
+
 
                                         /* Separators */
 
@@ -79,7 +80,10 @@ Exponent = [eE] [+-]? [0-9]+
 		"*"												{ return new Symbol(sym.POR); }
 		"/"												{ return new Symbol(sym.DIV); }
 		"%"												{ return new Symbol(sym.MOD); }
-
+		"?"												{ return new Symbol(sym.QUESTION, Generador.getTag()); }
+		"&"												{ return new Symbol(sym.DIR); }
+		"+="											{ return new Symbol(sym.MASEQ); }
+	
                                                 /* Integer numbers*/
 
         0|[1-9][0-9]*                                   { return new Symbol(sym.NUMERO, new Integer(yytext())); }

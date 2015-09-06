@@ -8,10 +8,16 @@ action code {:
 	/* Casting flags */
 	boolean flagFloat = false;
 
+	/* New Types of vars */
+	ArrayList<String> tipos = new ArrayList<String>();
+	int newTipos = 10;
+
 	String switchVar = "";
 	String switchTag = "";
 	
 	int contCase = 0;
+
+	String tempQuest = "";
 :}
 
 parser code {:
@@ -28,6 +34,7 @@ terminal 			INT;
 terminal 			FLOAT;
 terminal 			AC, CC;
 terminal 			PYC, COMA, POR, AL, CL, ASIG, AP, CP, DOSPUNTOS;
+terminal 			MASEQ;
 terminal String 	IF, ELSE;
 terminal 			PRINT;
 terminal String 	DO, WHILE;
@@ -37,12 +44,16 @@ terminal String		SWITCH;
 terminal String		CASE;
 terminal 			DEFAULT, BREAK;
 terminal	 		MASMAS;
+terminal 			DIR;
 terminal 			MENOSMENOS;
 terminal 			MAS, MENOS, NOT, DIV, MOD, UMINUS;
 terminal 			MEQ, MAQ, MEOQ, MAOQ;
 terminal 			EQ, NEQ;
 terminal 			AND;
 terminal 			OR;
+terminal String		QUESTION;
+terminal			TYPEDEF;
+terminal String		TYPE;
 
 terminal Integer 	NUMERO;
 terminal Double 	NUMEROF;
@@ -70,6 +81,8 @@ non terminal String 		exp, stepPart;
 non terminal String			varOrNum;
 non terminal String 		case;
 non terminal String			listaCase;
+non terminal String			conditionalQuest;
+non terminal String 		typedefSent;
 
 /* Precedencia */
 
@@ -241,9 +254,29 @@ sent		::=			exp:e PYC			{: :}
 														Var.downLevel();
 													:}
 
-			|			tipo listaDec PYC			{: :}
+			|			typedefSent	PYC				{: :}
 
+			|			tipo listaDec PYC			{: :}
 			;	
+
+conditionalQuest	::=		AP cond:c CP			{:
+														Generador.label(c.getV());
+													:} 
+							
+							QUESTION:q exp:e1 		{:
+														tempQuest = Generador.getTemp(1);
+														Generador.assignment(tempQuest, e1);
+														Generador.goTo(q);
+														Generador.label(c.getF());
+													:}
+							
+							DOSPUNTOS exp:e2		{:
+														Generador.assignment(tempQuest, e2);
+														Generador.label(q);
+														RESULT = tempQuest;
+													:}
+
+					;
 
 forInIdent	::=			IDENT:i				{:
 												RESULT = i;
@@ -319,6 +352,7 @@ tipo            ::=     INT                             {:
                 |       FLOAT                           {: 
 															var = new Variable(Var.getLevel(), Variable.REAL);
 														:}
+
                 ;
 
 listaDec	::=	dec
@@ -346,6 +380,11 @@ dec		::=		IDENT:i ASIG exp:e1		{:
 													var.setTam(new Integer(d));
 													Var.addVar(i, var);
 												:}
+
+		|	POR IDENT:i							{:
+													var.setIsPointer(true);
+													Var.addVar(i, var);
+												:}
 		;
 
 dimensiones	::=		AC NUMERO:n CC 				{:
@@ -356,6 +395,17 @@ dimensiones	::=		AC NUMERO:n CC 				{:
 														RESULT = n.toString();
 													:}
 			;
+
+typedefSent		::=		TYPEDEF tipo IDENT:i	{:
+													if(tipos.contains(i)){
+														Generador.error();
+														Generador.halt();
+													}
+													else{
+														tipos.add(i);
+													}
+												:}
+				;
 
 
 elsePart 	::= 	ELSE sent
@@ -391,6 +441,10 @@ exp		::=	exp:e1 MAS exp:e2			{:
 		
 		| 	AP exp:e1 CP				{:
 											RESULT = e1;
+										:}
+
+		|	conditionalQuest:q			{:
+											RESULT = q;
 										:}
 
 		|	casting:n					{: 
@@ -464,28 +518,51 @@ arrayIni 			::=		exp:e							{:
 															:}
 					;
 
-variable	::=	IDENT:i										{:
-																if(Var.exists(i)){
-                                                                        RESULT = Var.getVar(i);
-                                                                }
-                                                                else{
-                                                                        Generador.error();
-                                                                        Generador.halt();
-                                                                }
+variable	::=	IDENT:i					{:
+											if(Var.exists(i)){
+												RESULT = Var.getVar(i);
+                                            }
+                                            else{
+                                                Generador.error();
+                                                Generador.halt();
+                                            }
+										:}
 
-															:}
+			|	IDENT:i AC exp:e CC		{:
+											if(Var.exists(i)){
+												String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
+												Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
+												RESULT = aux;
+											}
+											else{
+												Generador.error();
+												Generador.halt();
+											}
+										:}
 
-			|	IDENT:i AC exp:e CC							{:
-																if(Var.exists(i)){
-																	String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
-																	Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
-																	RESULT = aux;
-																}
-																else{
-																	Generador.error();
-																	Generador.halt();
-																}
-															:}
+			|	POR IDENT:i		{:
+									if(Var.getLastVar(i).isPointer()){
+										String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
+										Generador.assignment(aux, "* " + Var.getVar(i));
+										RESULT = aux;
+									}
+									else{
+										Generador.error();
+										Generador.halt();
+									}
+								:}
+
+			|	DIR IDENT:i		{:
+									if(Var.exists(i)){
+										String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
+										Generador.assignment(aux, "& " + Var.getVar(i));
+										RESULT = aux;
+									}
+									else{
+										Generador.error();
+										Generador.halt();
+									}
+								:}
 
 			;
 
@@ -494,7 +571,7 @@ incremento	::=	MASMAS IDENT:i1                 {:
                                                         :}
 
                 |       IDENT:i1 MASMAS                 {:
-                                                                String temp = Generador.getTemp(Var.getListVar(i1).get(Var.getListVar(i1).size()-1).getTipo());
+                                                                String temp = Generador.getTemp(Var.getLastVar(i1).getTipo());
                                                                 Generador.assignment(temp, Var.getVar(i1));
                                                                 Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");
                                                                 RESULT = temp;
@@ -505,7 +582,7 @@ incremento	::=	MASMAS IDENT:i1                 {:
                                                         :}
 
                 |       IDENT:i1 MENOSMENOS             {:
-                                                                String temp = Generador.getTemp(Var.getListVar(i1).get(Var.getListVar(i1).size()-1).getTipo());
+                                                                String temp = Generador.getTemp(Var.getLastVar(i1).getTipo());
                                                                 Generador.assignment(temp, Var.getVar(i1));
                                                                 Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " - " + "1");
                                                                 RESULT = temp;

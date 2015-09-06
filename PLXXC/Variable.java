@@ -6,17 +6,18 @@ public class Variable{
 	public static final int PUNTERO = 4;
 	public static final int CHAR = 5;
 	
-
 	private int nivel;
 	private int tipo;
 	private boolean isArray;
 	private int tam;
+	private boolean isPointer;
 
 	public Variable(int nivel, int tipo){
 		this.nivel = nivel;
 		this.tipo = tipo;
 		this.isArray = false;
 		this.tam = 0;
+		this.isPointer = false;
 	}
 
 	public int getNivel(){
@@ -49,5 +50,13 @@ public class Variable{
 
 	public void setTam(int tam){
 		this.tam = tam;
+	}
+
+	public boolean isPointer(){
+		return this.isPointer;
+	}
+
+	public void setIsPointer(boolean state){
+		this.isPointer = state;
 	}
 }
