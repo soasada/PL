@@ -78,7 +78,6 @@ non terminal String			break;
 non terminal String 		forInIdent;
 non terminal Object 		forArray;
 non terminal List<String>	arrayIni;
-non terminal String			listaLlaves;
 non terminal ArrayList<Integer> dimensiones;
 non terminal ArrayList<String> dimensionesAsig;
 non terminal String 		incremento;
@@ -115,7 +114,7 @@ listaSent	::=	sent
 		;
 
 
-sent		::=			exp:e PYC			{: :}
+sent		::=			exp PYC 	{: :}
 
 			|			IF:tagIf AP cond:c CP 		{: 
 														Generador.label(c.getV());
@@ -361,15 +360,11 @@ stepPart	::=	STEP exp:e1					{:
 
 			;
 
-listaLlaves    ::= listaLlaves:r COMA AL arrayIni:l CL			{: 
-																	RESULT = p.mergeArrays(r, l); 
-																:}
-				;
 forArray	::=	IDENT:i						{:
 												RESULT = i;
 											:}
 		
-			|	AL arrayIni:l CL			{:
+			|	AL arrayIni:l CL				{:
 												RESULT = l;
 											:}
 
@@ -413,11 +408,12 @@ dec		::=		IDENT:i ASIG exp:e1		{:
 													Generador.assignment(Var.getVar(i), e1);
 												:}
 
-		| IDENT:i dimensiones:d ASIG AL arrayIni:e1 CL	{:
+		| IDENT:i dimensiones:d ASIG AL arrayIni:e1	CL	{:
 															var.setIsArray(true);
 															var.setTam(d);
 															dims.clear();
 															Var.addVar(i, var);
+															System.out.println(e1.toString());
 															RESULT = Generador.arrayInit(i, e1);
 														:}
 
@@ -508,10 +504,6 @@ exp		::=	exp:e1 MAS exp:e2			{:
                                               RESULT = i;
                                         :}
 
-		|	AL listaLlaves:a CL			{:
-											RESULT = a;
-										:}
-
 		|	asig:a						{:
 											RESULT = a;
 										:}
@@ -571,17 +563,25 @@ dimensionesAsig 	::=		AC exp:e CC						{:
 
 					;
 
-arrayIni 			::=		 exp:e 							{:
-																RESULT = new ArrayList<String>();
-																RESULT.add(e);
-															:}
+arrayIni	::=     arrayIni:l1 COMA arrayIni:l2  	{:      
+														RESULT = l1;
+													:}
+            
+			|		AL arrayIni:l CL            	{: 
+														RESULT = l;
+													:}
+ 
+            |       exp:e                       {:
+                                                	RESULT = new ArrayList<String>();
+                                                    RESULT.add(e);
+                                                :}
 
-					|	arrayIni:a COMA exp:e				{:
-																a.add(e);
-																RESULT = a;
-															:}
-					;
-
+         	|       exp:e COMA arrayIni:a       {:
+                               				       a.add(e);
+                                                   RESULT = a;
+                                                :}
+                                        
+			;
 variable	::=	IDENT:i					{:
 											if(Var.exists(i)){
 												RESULT = Var.getVar(i);
