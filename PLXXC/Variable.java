@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Variable{
 
 	public static final int INTEGER = 1;
@@ -9,14 +11,15 @@ public class Variable{
 	private int nivel;
 	private int tipo;
 	private boolean isArray;
-	private int tam;
+	private int tam1, tam2;
 	private boolean isPointer;
 
 	public Variable(int nivel, int tipo){
 		this.nivel = nivel;
 		this.tipo = tipo;
+		this.tam1 = 0;
+		this.tam2 = 0;
 		this.isArray = false;
-		this.tam = 0;
 		this.isPointer = false;
 	}
 
@@ -45,11 +48,27 @@ public class Variable{
 	}
 
 	public int getTam(){
-		return this.tam;
+		return this.tam1;
 	}
 
-	public void setTam(int tam){
-		this.tam = tam;
+	public int getTam2(){
+		return this.tam2;
+	}
+
+	public void setTam(ArrayList<Integer> tams){
+		if(tams.size() == 1){
+			this.tam1 = tams.get(0);
+		}
+		else{
+			for(int i = 0; i < tams.size(); i++){
+				if(i == 0){
+					this.tam1 = tams.get(i);
+				}
+				if(i == 1){
+					this.tam2 = tams.get(i);
+				}
+			}
+		}
 	}
 
 	public boolean isPointer(){
@@ -58,5 +77,10 @@ public class Variable{
 
 	public void setIsPointer(boolean state){
 		this.isPointer = state;
+	}
+
+	@Override
+	public String toString(){
+		return "(" + tam1 + ", " + tam2 +  ")";
 	}
 }

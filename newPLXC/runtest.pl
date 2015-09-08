@@ -25,6 +25,7 @@ foreach $plxcFile (@files){
 
 		if($salida1 eq $salida2){
 			$cont++;
+			print "\n*********\n" . "Éxito\n" . $plxcFile . "\n*********\n";
 		}
 		else{
 			print "\n*********\n" . "ERROR\n" . $plxcFile . "\n*********\n";
@@ -36,7 +37,7 @@ foreach $plxcFile (@files){
 }
 
 if($cont == $cont2){
-	print "Éxito!, todos los tests superados " . $cont . "/" . $cont2 . "\n";
+	print "Éxito!, todos los test superado " . $cont . "/" . $cont2 . "\n";
 }
 else{
 	print "Has tenido algún error, número de test pasados: " . $cont . " de " . $cont2 . "\n";

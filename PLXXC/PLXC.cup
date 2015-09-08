@@ -5,8 +5,9 @@ import java.util.List;
 action code {:
 	Variable var = new Variable(0,0);
 
-	/* Casting flags */
-	boolean flagFloat = false;
+	ArrayList<Integer> dims = new ArrayList<Integer>();
+
+	ArrayList<String> dimsAsig = new ArrayList<String>();
 
 	/* New Types of vars */
 	ArrayList<String> tipos = new ArrayList<String>();
@@ -31,12 +32,16 @@ parser code {:
 /* Terminales */
 
 terminal 			INT;
+terminal			CHAR;
 terminal 			FLOAT;
+terminal			COMILLAS;
+terminal			CASINT, CASFLOAT;
 terminal 			AC, CC;
 terminal 			PYC, COMA, POR, AL, CL, ASIG, AP, CP, DOSPUNTOS;
 terminal 			MASEQ;
 terminal String 	IF, ELSE;
 terminal 			PRINT;
+terminal			TRUE, FALSE;
 terminal String 	DO, WHILE;
 terminal String		TO, STEP, DOWNTO, IN;
 terminal String 	FOR;
@@ -45,6 +50,7 @@ terminal String		CASE;
 terminal 			DEFAULT, BREAK;
 terminal	 		MASMAS;
 terminal 			DIR;
+terminal			PREINCR;
 terminal 			MENOSMENOS;
 terminal 			MAS, MENOS, NOT, DIV, MOD, UMINUS;
 terminal 			MEQ, MAQ, MEOQ, MAOQ;
@@ -53,7 +59,6 @@ terminal 			AND;
 terminal 			OR;
 terminal String		QUESTION;
 terminal			TYPEDEF;
-terminal String		TYPE;
 
 terminal Integer 	NUMERO;
 terminal Double 	NUMEROF;
@@ -68,11 +73,13 @@ non terminal Tag 			cond;
 non terminal 				listaDec;
 non terminal 				dec;
 non terminal 				tipo;
+non terminal				character;
+non terminal String			break;
 non terminal String 		forInIdent;
 non terminal Object 		forArray;
 non terminal List<String>	arrayIni;
-non terminal String 		dimensiones;
-non terminal String 		dimensionesAsig;
+non terminal ArrayList<Integer> dimensiones;
+non terminal ArrayList<String> dimensionesAsig;
 non terminal String 		incremento;
 non terminal String			variable, numero;
 non terminal String			asig;
@@ -86,14 +93,18 @@ non terminal String 		typedefSent;
 
 /* Precedencia */
 
-precedence left 	COMA;
-precedence right	ASIG;
-precedence left  	MAS, MENOS;
-precedence left  	POR, DIV, MOD;
-precedence left  	UMINUS;
-precedence left  	AND, OR;
-precedence left  	ELSE;
-precedence right 	NOT;
+precedence left         	COMA;
+precedence right        	ASIG, MASEQ;
+precedence right			QUESTION;
+precedence left         	OR;
+precedence left         	AND;
+precedence left         	EQ, NEQ;
+precedence left         	MEQ, MEOQ, MAQ, MAOQ;
+precedence left         	MAS, MENOS;
+precedence left         	POR, DIV, MOD;
+precedence right        	UMINUS, PREINCR, NOT, CASINT, CASFLOAT, DIR;
+precedence left         	MASMAS, MENOSMENOS, AC, CC, AP, CP;
+precedence nonassoc			IF, ELSE;
 
 
 /* Gramatica */
@@ -219,13 +230,13 @@ sent		::=			exp:e PYC			{: :}
 								
 													:}
 
-			|			SWITCH:tagS AP varOrNum:v CP AL	{:
+			|			SWITCH:tagS AP exp:v CP AL	{:
 															switchVar = v;
 															switchTag = tagS;
 														:}
 						
 						listaCase:l					{:
-														Generador.label(Generador.getTag());
+														Generador.label(l);
 													:}
 
 						DEFAULT DOSPUNTOS			{:
@@ -300,11 +311,26 @@ case 		::=			CASE:c varOrNum:v DOSPUNTOS		{:
 
 													:}
 
-						BREAK PYC					{:
-														Generador.goTo(switchTag);
+						break:b						{:
+														Generador.goTo(b);
 														Generador.label(c);
+														if(b.equals(switchTag)){
+															RESULT = Generador.getTag();
+														}
+														else{
+															RESULT = b;
+														}
 													:}
 
+			;
+
+break 		::=		BREAK PYC						{:
+														RESULT = switchTag;
+													:}
+
+			|										{:
+														RESULT = Generador.getTag();
+													:}
 			;
 
 listaCase	::=		case:c							{:
@@ -353,6 +379,9 @@ tipo            ::=     INT                             {:
 															var = new Variable(Var.getLevel(), Variable.REAL);
 														:}
 
+				|		CHAR							{:
+															var = new Variable(Var.getLevel(), Variable.CHAR);
+														:}
                 ;
 
 listaDec	::=	dec
@@ -368,16 +397,30 @@ dec		::=		IDENT:i ASIG exp:e1		{:
 											Var.addVar(i, var);
 										:}
 
+		|		IDENT:i ASIG character	{:
+
+										:}
+
 		| IDENT:i dimensiones:d ASIG exp:e1		{:
 													var.setIsArray(true);
-													var.setTam(new Integer(d));
+													var.setTam(d);
+													dims.clear();
 													Var.addVar(i, var);
 													Generador.assignment(Var.getVar(i), e1);
 												:}
 
+		| IDENT:i dimensiones:d ASIG AL arrayIni:e1 CL	{:
+															var.setIsArray(true);
+															var.setTam(d);
+															dims.clear();
+															Var.addVar(i, var);
+															RESULT = Generador.arrayInit(i, e1);
+														:}
+
 		|	IDENT:i dimensiones:d				{:
 													var.setIsArray(true);
-													var.setTam(new Integer(d));
+													var.setTam(d);
+													dims.clear();
 													Var.addVar(i, var);
 												:}
 
@@ -388,11 +431,18 @@ dec		::=		IDENT:i ASIG exp:e1		{:
 		;
 
 dimensiones	::=		AC NUMERO:n CC 				{:
-													RESULT = n.toString();
+													dims.add(n);
+													RESULT = dims;
 												:}
 
 			|	dimensiones:d AC NUMERO:n CC		{:
-														RESULT = n.toString();
+														dims.add(n);
+														RESULT = dims;
+													:}
+			;
+
+character	::=		COMILLAS IDENT:i COMILLAS		{:
+
 													:}
 			;
 
@@ -425,7 +475,6 @@ exp		::=	exp:e1 MAS exp:e2			{:
 										:}
 
 		| 	exp:e1 DIV exp:e2			{:
-											flagFloat = false;
 											RESULT = Generador.arithmetic(e1, e2, Generador.DIV);
 										:}
 
@@ -470,12 +519,7 @@ exp		::=	exp:e1 MAS exp:e2			{:
 		;
 
 numero		::=		NUMERO:n				{:
-												if(flagFloat){
-													RESULT = Generador.casting(n.toString(), Variable.REAL);
-												}
-												else{
-													RESULT = n.toString();
-												}
+												RESULT = n.toString();
 											:}
 		
 		|		NUMEROF:n					{:
@@ -489,20 +533,32 @@ asig 		::= 	IDENT:i ASIG exp:e1 				{:
 
 		|		IDENT:i dimensionesAsig:a ASIG exp:e1	{:
 															RESULT = Generador.assignment(Var.getVar(i), a, e1);
+															dimsAsig.clear();
 														:}
 
 		|		IDENT:i ASIG AL arrayIni:a CL			{:
-															Generador.arrayInit(i, a);
+															RESULT = Generador.arrayInit(i, a);
+														:}
+
+		|		IDENT:i MASEQ exp:e1					{:
+															RESULT = Generador.assignmentPlus(Var.getVar(i), e1);
+														:}
+
+		|		IDENT:i dimensionesAsig:a MASEQ exp:e1	{:
+															RESULT = Generador.assignmentPlus(Var.getVar(i), a, e1);
+															dimsAsig.clear();
 														:}
 
 		;
 
 dimensionesAsig 	::=		AC exp:e CC						{:
-																RESULT = e;
+																dimsAsig.add(e);
+																RESULT = dimsAsig;
 															:}
 
 					|		dimensionesAsig:a AC exp:e CC	{:
-																RESULT = e;
+																dimsAsig.add(e);
+																RESULT = dimsAsig;
 															:}
 
 					;
@@ -568,7 +624,7 @@ variable	::=	IDENT:i					{:
 
 incremento	::=	MASMAS IDENT:i1                 {:
                                                                 RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " + " + "1");
-                                                        :}
+                                                        :} %prec PREINCR
 
                 |       IDENT:i1 MASMAS                 {:
                                                                 String temp = Generador.getTemp(Var.getLastVar(i1).getTipo());
@@ -579,7 +635,7 @@ incremento	::=	MASMAS IDENT:i1                 {:
 
                 |       MENOSMENOS IDENT:i1             {:
                                                                 RESULT = Generador.assignment(Var.getVar(i1), Var.getVar(i1) + " - " + "1");
-                                                        :}
+                                                        :} %prec PREINCR
 
                 |       IDENT:i1 MENOSMENOS             {:
                                                                 String temp = Generador.getTemp(Var.getLastVar(i1).getTipo());
@@ -589,27 +645,17 @@ incremento	::=	MASMAS IDENT:i1                 {:
                                                         :}
 		;
 
-casting 	::=	AP INT CP			{:
-							:}
-			
-			exp:e				{:
-								RESULT = Generador.casting(e, Variable.INTEGER);
-							:}
+casting 	::=	CASINT exp:e 	{:
+									RESULT = Generador.casting(e, Variable.INTEGER);
+								:}
 
-		|	AP FLOAT CP			{:
-								flagFloat = true;
-							:}
-
-			exp:e				{:
-								if(flagFloat){
-									RESULT = Generador.casting(e, Variable.REAL);
-								}
-								else{
-									RESULT = e;
-								}
-								
-							:}
-		;
+			| CASFLOAT varOrNum:n1 {: RESULT = Generador.casting(n1, Variable.REAL); :}
+          	
+			  DIV varOrNum:n2	{: 
+									String e2 = Generador.casting(n2, Variable.REAL); 
+									RESULT = Generador.arithmetic(RESULT, e2, Generador.DIV); 
+								:}
+			;
 
 cond 		::=	exp:e1 EQ exp:e2		{:
 								RESULT = Generador.condition(e1, Tag.EQ, e2);
@@ -662,7 +708,19 @@ cond 		::=	exp:e1 EQ exp:e2		{:
 								RESULT = c2;
 							:}
 
-		|	AP cond:c CP			{:
+		|	AP cond:c CP	{:
 								RESULT = c;
+							:}
+
+		|	TRUE			{:
+								Tag tag = new Tag(Generador.getTag(), Generador.getTag());
+								Generador.goTo(tag.getV());
+								RESULT = tag;
+							:}
+
+		|	FALSE			{:
+								Tag tag = new Tag(Generador.getTag(), Generador.getTag());
+								Generador.goTo(tag.getF());
+								RESULT = tag;
 							:}
 		;

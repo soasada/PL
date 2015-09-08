@@ -1,0 +1,306 @@
+import java_cup.runtime.*;
+
+action code {:
+
+	int tipoVar = 0;
+	
+	/* flag for casting int to float */
+	boolean flagCastFloat = false;
+:}
+
+parser code {:
+	@Override
+	public void report_error(String message, Object info){
+		Generador.error();
+	}
+:}
+
+
+/* Terminales */
+
+terminal 		INT, FLOAT;
+terminal		PRINT;
+terminal		AP, CP, PYC, AL, CL, AC, CC;
+terminal		ASIG;
+terminal		COMA;
+terminal String FOR;
+terminal		MAQ, MEQ, NOT;
+terminal		EQ, MEOQ, MAOQ, NEQ;
+terminal		AND, OR;
+terminal		MASMAS, MENOSMENOS;
+terminal		MAS, MENOS, POR, DIV, MOD;
+terminal		UMINUS;
+
+terminal Integer	NUMERO;
+terminal Double		NUMEROF;
+terminal String		IDENT;
+
+/* No terminales */
+
+non terminal			sent;
+non terminal		 	listaSent;
+non terminal String 	numero;
+non terminal String		exp;
+non terminal String		asig;
+non terminal			listaDec;
+non terminal Tag 		cond;
+non terminal String		casting;
+non terminal String 	dec, decIni;
+non terminal String		inicializacion;
+non terminal String		variable;
+non terminal Integer	tipo;
+
+/* Precedencia */
+
+precedence right	ASIG;
+precedence left  	MAS, MENOS;
+precedence left  	POR, DIV, MOD;
+precedence left  	UMINUS;
+precedence left  	AND, OR;
+precedence right 	NOT;
+
+/* Gramatica */
+
+listaSent	::=		sent
+			|		listaSent sent
+			;
+
+sent		::=		asig PYC		{:
+
+									:}
+
+			|		listaDec PYC	{:
+										System.out.println(SymbolTable.getSymbolTable().toString());
+									:}
+			|		FOR:tagFor AP exp:e1 PYC	{:
+													Generador.label(tagFor);
+												:}
+
+					cond:c1 PYC		{:
+										RESULT = Generador.getLabel();
+										Generador.label(RESULT.toString());
+									:}
+
+					exp:e2 CP		{:
+										Generador.goTo(tagFor);
+										Generador.label(c1.getV());
+									:}
+
+					sent			{:
+										Generador.goTo(RESULT.toString());
+										Generador.label(c1.getF());
+									:}
+
+			|		AL	{: 
+							SymbolTable.upLevel(); 
+						:}
+
+					listaSent CL	{:
+										SymbolTable.clear(SymbolTable.getLevel()); 
+										SymbolTable.downLevel();
+									:}
+
+
+			|	PRINT AP exp:e1 CP PYC	{:
+											Generador.print(e1);
+										:}
+			;
+
+listaDec	::=		tipo:t decIni:i
+			|		listaDec COMA decIni:i
+			;
+
+dec			::=		IDENT:i		{:
+									SymbolTable.addVar(i, new Variable("0", 0, SymbolTable.getLevel()));
+									RESULT = i;
+								:}
+
+			|		IDENT:i AC NUMERO:n CC	{:
+												SymbolTable.addVar(i, new Variable("0", 0, SymbolTable.getLevel()));
+												SymbolTable.getLastVar(i).setIsArray(true);
+												SymbolTable.getLastVar(i).setTam(new Integer(n));
+												RESULT = i;
+											:}
+			;
+
+decIni		::=		dec:i inicializacion:p	{:
+												SymbolTable.getLastVar(i).setTipo(tipoVar);
+												SymbolTable.getLastVar(i).setValor(p);
+												Generador.assignment(i, p);
+												RESULT = i;
+											:}
+
+			;
+
+asig		::=		IDENT:v ASIG exp:e1		{:
+												Generador.assignment(v, e1);
+												RESULT = v;
+											:}
+
+			|		IDENT:v AC exp:n CC ASIG exp:e1		{:
+															Generador.assignment(v, e1, n);
+															RESULT = v;
+														:}
+			;
+
+inicializacion	::=		ASIG exp:e1			{:
+												RESULT = e1;
+											:}
+				|
+				;
+
+tipo		::=		INT				{:
+										tipoVar = new Integer(1);
+										RESULT = tipoVar;
+									:}
+
+			|		FLOAT			{:
+										tipoVar = new Integer(2);
+										RESULT = tipoVar;
+									:}
+			;
+
+exp			::=		asig:a					{:
+												RESULT = a;
+											:}
+
+			|		exp:e1 MAS exp:e2		{:
+												RESULT = Generador.suma(e1, e2);
+											:}
+
+			|		exp:e1 MENOS exp:e2		{:
+												RESULT = Generador.resta(e1, e2);
+											:}
+
+			|		exp:e1 POR exp:e2		{:
+												RESULT = Generador.mul(e1, e2);
+											:}
+
+			|		exp:e1 DIV exp:e2		{:
+												System.out.println("Entro 3");
+												RESULT = Generador.div(e1, e2);
+											:}
+
+			|		AP exp:e1 CP			{:
+												RESULT = e1;
+											:}
+
+			|		casting:c				{:
+												RESULT = c;
+											:}
+
+			|		numero:n				{:
+												if(flagCastFloat){
+													RESULT = Generador.casting(n, 2);
+												}
+												else{
+													RESULT = n;
+												}
+											:}
+
+			|		variable:v				{:
+												RESULT = v;
+											:}
+			;
+
+casting		::=		AP INT CP exp:e1		{:
+												RESULT = Generador.casting(e1, 1);
+											:}
+
+			|		AP FLOAT CP 			{:
+												flagCastFloat = true;
+											:}
+								
+					exp:e1					{:
+												flagCastFloat = false;
+												RESULT = e1;
+											:}
+
+			;
+
+numero		::=		NUMERO:n	{:
+									RESULT = n.toString();
+								:}
+
+			|		NUMEROF:n	{:
+									RESULT = n.toString();
+								:}
+			;
+
+variable	::=		IDENT:i		{:
+									if(SymbolTable.exists(i)){
+										RESULT = i;
+									}
+									else{
+										Generador.error();
+									}
+								:}
+
+			|	IDENT:i AC exp:n CC		{:
+											if(SymbolTable.exists(i)){
+												String temp = Generador.getTemp(SymbolTable.getLastVar(i).getTipo());
+												Generador.assignment(temp, i + "[" + n + "]");
+												RESULT = temp;
+                                    		}
+                                   			 else{
+                                        		Generador.error();
+                                    		}
+										:}
+			;
+
+cond	::=		exp:e1 EQ exp:e2	{:
+										RESULT = Generador.condition(e1, Tag.EQ, e2);
+									:}
+
+		|	exp:e1 NEQ exp:e2		{:
+										RESULT = Generador.condition(e1, Tag.NEQ, e2);
+									:}
+
+		| 	exp:e1 MEQ exp:e2		{:
+										RESULT = Generador.condition(e1, Tag.MEQ, e2);
+									:}
+
+		|	exp:e1 MEOQ exp:e2		{:
+										RESULT = Generador.condition(e1, Tag.MEOQ, e2);
+									:}
+
+		| 	exp:e1 MAQ exp:e2		{:
+										RESULT = Generador.condition(e1, Tag.MAQ, e2);
+									:}
+
+		| 	exp:e1 MAOQ exp:e2		{:
+										RESULT = Generador.condition(e1, Tag.MAOQ, e2);
+									:}
+
+		|	NOT cond:c			{:
+									String temp = c.getV();
+									c.setV(c.getF());
+									c.setF(temp);
+									RESULT = c;
+								:}
+
+		| 	cond:c1 AND			{:
+									Generador.label(c1.getV());
+								:}
+
+			cond:c2				{:
+									Generador.label(c1.getF());
+									Generador.goTo(c2.getV());
+									RESULT = c2;
+								:}
+
+		|	cond:c1 OR			{:
+									Generador.label(c1.getF());
+								:}
+
+			cond:c2				{:
+									Generador.label(c1.getV());
+									Generador.goTo(c2.getF());
+									RESULT = c2;
+								:}
+
+		|	AP cond:c CP		{:
+										RESULT = c;
+								:}
+		;
+

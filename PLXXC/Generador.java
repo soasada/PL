@@ -1,6 +1,7 @@
 import java.io.PrintStream;
 import java.util.regex.Pattern;
 import java.util.List;
+import java.util.ArrayList;
 
 public class Generador {
 
@@ -51,17 +52,17 @@ public class Generador {
 				int tipo2 = 0;
 				boolean flag = false;
 
-				if(Var.getLastVar(ident).isArray() && Var.getLastVar(exp).isArray()){
-						return arrayAssignment(ident, exp);
-				}
+				System.out.println("IDENT: " + ident + "\n" + " EXP: " + exp);
 
-				// System.out.println("IDENT: " + ident + "\n" + " EXP: " + exp);
+				if(Var.getLastVar(ident).isArray() && Var.getLastVar(exp).isArray()){
+						arrayAssignment(ident, exp);
+				}
 
 				tipo = checkExp(exp);
 				tipo2 = Var.getLastVar(ident).getTipo();
 
 				if(tipo == 3){
-						dimension(exp, exp);
+						dimension(exp, exp, 0);
 				}
 
 				if(tipo == 60 || tipo == 70){
@@ -81,6 +82,43 @@ public class Generador {
 				}
 
 				return ident;
+		}
+
+		public static String assignmentPlus(String ident, String exp){
+                int tipo = 0;
+                int tipo2 = 0;
+                boolean flag = false;
+
+                System.out.println("IDENT: " + ident + "\n" + " EXP: " + exp);
+
+                if(Var.getLastVar(ident).isArray() && Var.getLastVar(exp).isArray()){
+                        arrayAssignment(ident, exp);
+                }
+
+                tipo = checkExp(exp);
+                tipo2 = Var.getLastVar(ident).getTipo();
+
+                if(tipo == 3){
+                        dimension(exp, exp, 0);
+                }
+
+                if(tipo == 60 || tipo == 70){
+                        tipo = Var.getLastVar(exp).getTipo();
+                        flag = true;
+                }
+
+                if((tipo == 1 && tipo2 == 2) && flag){
+                        out.println("   " + ident + " = (float)" + exp + ";");
+                }
+                else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
+                        Generador.error();
+                        Generador.halt();
+                }
+                else{
+                        out.println("   " + ident + " = " + ident + " + " + exp + ";");
+                }
+
+                return ident;
 		}
 
 		public static String arrayAssignment(String ident, String exp){
@@ -105,51 +143,99 @@ public class Generador {
 				return tmp;
 		}
 
-		public static String assignment(String ident, String index, String exp){
+		public static String assignment(String ident, ArrayList<String> index, String exp){
 				int tipo = 0;
 				int tipo2 = 0;
 				boolean flag = false;
 
 				// System.out.println("IDENT: " + ident + "\n" + "INDEX: " + index + "\n" +  " EXP: " + exp);
 
-				dimension(ident, index);
+				for(int i = 0; i < index.size(); i++){
+					dimension(ident, index.get(i), i);
 
-				tipo = checkExp(exp);
-				tipo2 = Var.getLastVar(ident).getTipo();
+					System.out.println("HOLAAAAA: " + index.get(i));
 
-				if(tipo == 60 || tipo == 70){
-						tipo = Var.getLastVar(exp).getTipo();
-						flag = true;
-				}
+					tipo = checkExp(exp);
+					tipo2 = Var.getLastVar(ident).getTipo();
 
-				// System.out.println("tipo: " + tipo + " tipo2: " + tipo2);
+					if(tipo == 60 || tipo == 70){
+							tipo = Var.getLastVar(exp).getTipo();
+							flag = true;
+					}
 
-				if((tipo == 1 && tipo2 == 2) && flag){
-						String tmp = getTemp(Var.getLastVar(ident).getTipo());
-						out.println("	" + tmp + " = (float) " + exp + ";");
-						out.println("   " + ident + "[" + index + "]" + " = " + tmp + ";");
-				}
-				else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
-						String tmp = getTemp(tipo2);
-						out.println("	" + tmp + " = (float) " + exp + ";");
-						out.println("   " + ident + "[" + index + "]" + " = " + tmp + ";");
-				}
-				else{
-						String aux = ident + "[" + index + "]";
-						out.println("   " + aux +  " = " + exp + ";");
+					// System.out.println("tipo: " + tipo + " tipo2: " + tipo2);
+
+					if((tipo == 1 && tipo2 == 2) && flag){
+							String tmp = getTemp(Var.getLastVar(ident).getTipo());
+							out.println("	" + tmp + " = (float) " + exp + ";");
+							out.println("   " + ident + "[" + index.get(i) + "]" + " = " + tmp + ";");
+					}
+					else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
+							String tmp = getTemp(tipo2);
+							out.println("	" + tmp + " = (float) " + exp + ";");
+							out.println("   " + ident + "[" + index.get(i) + "]" + " = " + tmp + ";");
+					}
+					else{
+							String aux = ident + "[" + index.get(i) + "]";
+							out.println("   " + aux +  " = " + exp + ";");
+					}
+
 				}
 
 				return ident;
 		}
 
-		public static void arrayInit(String ident, List<String> exps){
+        public static String assignmentPlus(String ident, ArrayList<String> index, String exp){
+                int tipo = 0;
+                int tipo2 = 0;
+                boolean flag = false;
+
+                // System.out.println("IDENT: " + ident + "\n" + "INDEX: " + index + "\n" +  " EXP: " + exp);
+
+				for(int i = 0; i < index.size(); i++){
+                	dimension(ident, index.get(i), i);
+
+                	tipo = checkExp(exp);
+                	tipo2 = Var.getLastVar(ident).getTipo();
+
+                	if(tipo == 60 || tipo == 70){
+						tipo = Var.getLastVar(exp).getTipo();
+                        flag = true;
+                	}
+
+                	// System.out.println("tipo: " + tipo + " tipo2: " + tipo2);
+
+                	if((tipo == 1 && tipo2 == 2) && flag){
+                    	    String tmp = getTemp(Var.getLastVar(ident).getTipo());
+                       		out.println("   " + tmp + " = (float) " + exp + ";");
+                    	    out.println("   " + ident + "[" + index + "]" + " = " + tmp + ";");
+                	}
+                	else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
+                    	    String tmp = getTemp(tipo2);
+                    	    out.println("   " + tmp + " = (float) " + exp + ";");
+                    	    out.println("   " + ident + "[" + index + "]" + " = " + tmp + ";");
+                	}
+                	else{
+                    	    String aux = ident + "[" + index + "]";
+							String temp = getTemp(tipo2);
+							out.println("	" + temp + " = " + aux + ";");
+							out.println("	" + temp + " = " + temp + " + " + exp + ";");
+                   		    out.println("   " + aux +  " = " + temp + ";");
+                	}
+				}
+
+                return ident;
+        }
+
+
+		public static String arrayInit(String ident, List<String> exps){
 				int tipo = 0;
 				int index = 0;
 
 				if(Var.getLastVar(ident).getTam() < exps.size()){
 						error();
 						halt();
-						return;
+						return "";
 				}
 
 				// System.out.println("IDENT: " + ident + "\n" + "EXP: " + exps.get(1));
@@ -163,7 +249,7 @@ public class Generador {
 				if(Var.getLastVar(ident).getTipo() != tipo2){
 						error();
 						halt();
-						return;
+						return "";
 				}
 
 				tipo = checkExp(ident);
@@ -187,6 +273,8 @@ public class Generador {
 				}
 
 				out.println("	" + ident + " = " + tmp + ";");
+
+				return ident;
 		}
 
 		public static String arithmetic(String arg1, String arg2, int op){
@@ -344,7 +432,7 @@ public class Generador {
 			out.println(n);
 		}
 
-		public static void dimension(String ident, String index){
+		public static void dimension(String ident, String index, int ind){
 				if(isArray(ident) && isArray(index)){
 						boolean flag = true;
 						String aux = "";
@@ -375,12 +463,18 @@ public class Generador {
 						return;
 				}
 
-				if(!Var.getListVar(ident).get(Var.getListVar(ident).size()-1).isArray()){
+				if(!Var.getLastVar(ident).isArray()){
 						return;
 				}
 
 				Tag tag = new Tag(getTag(), getTag());
-				int size = Var.getLastVar(ident).getTam();
+				int size;
+				if(ind == 0){
+					size = Var.getLastVar(ident).getTam();
+				}
+				else{
+					size = Var.getLastVar(ident).getTam2();
+				}
 
 				out.println("# Comprobacion de rango");
 				out.println("   if (" + index + " < 0) goto " + tag.getV() + ";");

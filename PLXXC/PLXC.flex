@@ -47,6 +47,11 @@ Exponent = [eE] [+-]? [0-9]+
 		"break"											{ return new Symbol(sym.BREAK); }
 		"default"										{ return new Symbol(sym.DEFAULT); }
 		"typedef"										{ return new Symbol(sym.TYPEDEF); }
+		"true"											{ return new Symbol(sym.TRUE); }
+		"false"											{ return new Symbol(sym.FALSE); }
+		"char"											{ return new Symbol(sym.CHAR); }
+		"(int)"											{ return new Symbol(sym.CASINT); }
+		"(float)"										{ return new Symbol(sym.CASFLOAT); }
 
 
                                         /* Separators */
@@ -60,7 +65,7 @@ Exponent = [eE] [+-]? [0-9]+
         ";"                                             { return new Symbol(sym.PYC); }
 		","												{ return new Symbol(sym.COMA); }
 		":"												{ return new Symbol(sym.DOSPUNTOS); }
-
+		"'"												{ return new Symbol(sym.COMILLAS); }
 										/* Operators */
 
         "="                                             { return new Symbol(sym.ASIG); }
