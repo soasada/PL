@@ -78,6 +78,7 @@ non terminal String			break;
 non terminal String 		forInIdent;
 non terminal Object 		forArray;
 non terminal List<String>	arrayIni;
+non terminal String			listaLlaves;
 non terminal ArrayList<Integer> dimensiones;
 non terminal ArrayList<String> dimensionesAsig;
 non terminal String 		incremento;
@@ -216,7 +217,6 @@ sent		::=			exp:e PYC			{: :}
 													:}
 
 			|			FOR:tagFor forInIdent:e1	{:
-
 													:}
 	
 						IN:tagIN forArray:e2 DO		{:
@@ -294,7 +294,7 @@ forInIdent	::=			IDENT:i				{:
 											:}
 		
 			|	IDENT:i AC exp:e1 CC		{:
-												RESULT = i + "[" + e1 + "]";
+												RESULT = i + "[" + e1 + "]";;
 											:}
 			;
 
@@ -361,6 +361,10 @@ stepPart	::=	STEP exp:e1					{:
 
 			;
 
+listaLlaves    ::= listaLlaves:r COMA AL arrayIni:l CL			{: 
+																	RESULT = p.mergeArrays(r, l); 
+																:}
+				;
 forArray	::=	IDENT:i						{:
 												RESULT = i;
 											:}
@@ -500,9 +504,13 @@ exp		::=	exp:e1 MAS exp:e2			{:
 											RESULT = n; 
 										:}
 
-        |  incremento:i PYC             {:
+        |  incremento:i 	            {:
                                               RESULT = i;
                                         :}
+
+		|	AL listaLlaves:a CL			{:
+											RESULT = a;
+										:}
 
 		|	asig:a						{:
 											RESULT = a;
