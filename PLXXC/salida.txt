@@ -1,0 +1,733 @@
+import java_cup.runtime.*;					import java_cup.runtime.*;
+import java.util.ArrayList;					import java.util.ArrayList;
+import java.util.List;						import java.util.List;
+
+action code {:							action code {:
+	Variable var = new Variable(0,0);				Variable var = new Variable(0,0);
+
+	ArrayList<Integer> dims = new ArrayList<Integer>();		ArrayList<Integer> dims = new ArrayList<Integer>();
+
+	ArrayList<String> dimsAsig = new ArrayList<String>();		ArrayList<String> dimsAsig = new ArrayList<String>();
+
+	/* New Types of vars */						/* New Types of vars */
+	ArrayList<String> tipos = new ArrayList<String>();		ArrayList<String> tipos = new ArrayList<String>();
+	int newTipos = 10;						int newTipos = 10;
+
+	String switchVar = "";						String switchVar = "";
+	String switchTag = "";						String switchTag = "";
+									
+	int contCase = 0;						int contCase = 0;
+
+	String tempQuest = "";						String tempQuest = "";
+:}								:}
+
+parser code {:							parser code {:
+    @Override							    @Override
+    public void report_error(String message, Object info){ //	    public void report_error(String message, Object info){ //
+        Generador.error();					        Generador.error();
+	Generador.halt();						Generador.halt();
+    }								    }
+:}								:}
+
+/* Terminales */						/* Terminales */
+
+terminal 			INT;				terminal 			INT;
+terminal			CHAR;				terminal			CHAR;
+terminal 			FLOAT;				terminal 			FLOAT;
+terminal			COMILLAS;			terminal			COMILLAS;
+terminal			CASINT, CASFLOAT;		terminal			CASINT, CASFLOAT;
+terminal 			AC, CC;				terminal 			AC, CC;
+terminal 			PYC, COMA, POR, AL, CL, ASIG,	terminal 			PYC, COMA, POR, AL, CL, ASIG,
+terminal 			MASEQ;				terminal 			MASEQ;
+terminal String 	IF, ELSE;				terminal String 	IF, ELSE;
+terminal 			PRINT;				terminal 			PRINT;
+terminal			TRUE, FALSE;			terminal			TRUE, FALSE;
+terminal String 	DO, WHILE;				terminal String 	DO, WHILE;
+terminal String		TO, STEP, DOWNTO, IN;			terminal String		TO, STEP, DOWNTO, IN;
+terminal String 	FOR;					terminal String 	FOR;
+terminal String		SWITCH;					terminal String		SWITCH;
+terminal String		CASE;					terminal String		CASE;
+terminal 			DEFAULT, BREAK;			terminal 			DEFAULT, BREAK;
+terminal	 		MASMAS;				terminal	 		MASMAS;
+terminal 			DIR;				terminal 			DIR;
+terminal			PREINCR;			terminal			PREINCR;
+terminal 			MENOSMENOS;			terminal 			MENOSMENOS;
+terminal 			MAS, MENOS, NOT, DIV, MOD, UM	terminal 			MAS, MENOS, NOT, DIV, MOD, UM
+terminal 			MEQ, MAQ, MEOQ, MAOQ;		terminal 			MEQ, MAQ, MEOQ, MAOQ;
+terminal 			EQ, NEQ;			terminal 			EQ, NEQ;
+terminal 			AND;				terminal 			AND;
+terminal 			OR;				terminal 			OR;
+terminal String		QUESTION;				terminal String		QUESTION;
+terminal			TYPEDEF;			terminal			TYPEDEF;
+
+terminal Integer 	NUMERO;					terminal Integer 	NUMERO;
+terminal Double 	NUMEROF;				terminal Double 	NUMEROF;
+terminal String 	IDENT;					terminal String 	IDENT;
+
+/* No terminales */						/* No terminales */
+
+non terminal 				listaSent;		non terminal 				listaSent;
+non terminal 				sent;			non terminal 				sent;
+non terminal 				elsePart;		non terminal 				elsePart;
+non terminal Tag 			cond;			non terminal Tag 			cond;
+non terminal 				listaDec;		non terminal 				listaDec;
+non terminal 				dec;			non terminal 				dec;
+non terminal 				tipo;			non terminal 				tipo;
+non terminal				character;		non terminal				character;
+non terminal String			break;			non terminal String			break;
+non terminal String 		forInIdent;			non terminal String 		forInIdent;
+non terminal Object 		forArray;			non terminal Object 		forArray;
+non terminal List<String>	arrayIni;			non terminal List<String>	arrayIni;
+non terminal ArrayList<Integer> dimensiones;			non terminal ArrayList<Integer> dimensiones;
+non terminal ArrayList<String> dimensionesAsig;			non terminal ArrayList<String> dimensionesAsig;
+non terminal String 		incremento;			non terminal String 		incremento;
+non terminal String			variable, numero;	non terminal String			variable, numero;
+non terminal String			asig;			non terminal String			asig;
+non terminal String			casting;		non terminal String			casting;
+non terminal String 		exp, stepPart;			non terminal String 		exp, stepPart;
+non terminal String			varOrNum;		non terminal String			varOrNum;
+non terminal String 		case;				non terminal String 		case;
+non terminal String			listaCase;		non terminal String			listaCase;
+non terminal String			conditionalQuest;	non terminal String			conditionalQuest;
+non terminal String 		typedefSent;			non terminal String 		typedefSent;
+
+/* Precedencia */						/* Precedencia */
+
+precedence left         	COMA;				precedence left         	COMA;
+precedence right        	ASIG, MASEQ;			precedence right        	ASIG, MASEQ;
+precedence right			QUESTION;		precedence right			QUESTION;
+precedence left         	OR;				precedence left         	OR;
+precedence left         	AND;				precedence left         	AND;
+precedence left         	EQ, NEQ;			precedence left         	EQ, NEQ;
+precedence left         	MEQ, MEOQ, MAQ, MAOQ;		precedence left         	MEQ, MEOQ, MAQ, MAOQ;
+precedence left         	MAS, MENOS;			precedence left         	MAS, MENOS;
+precedence left         	POR, DIV, MOD;			precedence left         	POR, DIV, MOD;
+precedence right        	UMINUS, PREINCR, NOT, CASINT,	precedence right        	UMINUS, PREINCR, NOT, CASINT,
+precedence left         	MASMAS, MENOSMENOS, AC, CC, A	precedence left         	MASMAS, MENOSMENOS, AC, CC, A
+precedence nonassoc			IF, ELSE;		precedence nonassoc			IF, ELSE;
+
+
+/* Gramatica */							/* Gramatica */
+
+listaSent	::=	sent					listaSent	::=	sent
+		|	listaSent sent						|	listaSent sent
+		;								;
+
+
+sent		::=			exp:e PYC		sent		::=			exp:e PYC	
+
+			|			IF:tagIf AP c				|			IF:tagIf AP c
+															
+															
+											
+						sent								sent	
+															
+															
+															
+
+						elsePart							elsePart
+															
+															
+
+			|			WHILE:tagWhil				|			WHILE:tagWhil
+															
+															
+
+						cond:c CP							cond:c CP
+															
+															
+
+						sent								sent	
+															
+															
+															
+
+			|			DO:tagDo				|			DO:tagDo
+															
+															
+
+						sent								sent	
+
+						WHILE AP cond							WHILE AP cond
+															
+															
+															
+															
+
+			|			FOR:tagFor AP				|			FOR:tagFor AP
+															
+															
+
+						cond:c1 PYC							cond:c1 PYC
+															
+															
+															
+
+						exp:e2 CP							exp:e2 CP
+															
+															
+															
+
+															
+															
+															
+															
+
+			|			FOR:tagFor ex				|			FOR:tagFor ex
+															
+															
+
+						TO:tagTo exp:							TO:tagTo exp:
+															
+															
+															
+															
+
+						stepPart:p DO							stepPart:p DO
+															
+                                                        Gener	                                                        Gener
+                                                        Gener	                                                        Gener
+															
+											
+						sent								sent	
+															
+															
+															
+
+			|			FOR:tagFor ex				|			FOR:tagFor ex
+															
+															
+
+						DOWNTO:tagD e							DOWNTO:tagD e
+															
+															
+                                                        Gener	                                                        Gener
+															
+
+						stepPart:p DO							stepPart:p DO
+															
+                                                        Gener	                                                        Gener
+                                                        Gener	                                                        Gener
+															
+
+						sent								sent	
+															
+															
+															
+
+			|			FOR:tagFor fo				|			FOR:tagFor fo
+
+															
+									
+						IN:tagIN forA							IN:tagIN forA
+															
+															
+											
+						sent								sent	
+															
+															
+															
+															
+															
+
+			|			SWITCH:tagS A				|			SWITCH:tagS A
+															
+															
+															
+														
+						listaCase:l							listaCase:l
+															
+															
+
+						DEFAULT DOSPU							DEFAULT DOSPU
+
+															
+
+						sent								sent	
+
+															
+						CL								CL	
+															
+															
+											
+											
+										
+			|			PRINT AP exp:				|			PRINT AP exp:
+															
+															
+
+			|			AL 					|			AL 	
+															
+															
+											
+						listaSent CL							listaSent CL
+															
+															
+															
+
+			|			typedefSent				|			typedefSent
+
+			|			tipo listaDec				|			tipo listaDec
+			;								;	
+
+conditionalQuest	::=		AP cond:c CP		conditionalQuest	::=		AP cond:c CP	
+															
+															
+															
+							QUEST								QUEST
+															
+															
+															
+															
+															
+															
+							DOSPU								DOSPU
+															
+															
+															
+															
+
+					;								;
+
+forInIdent	::=			IDENT:i			forInIdent	::=			IDENT:i		
+															
+															
+										
+			|	IDENT:i AC exp:e1 CC					|	IDENT:i AC exp:e1 CC	
+															
+															
+			;								;
+
+case 		::=			CASE:c varOrNum:v DOS	case 		::=			CASE:c varOrNum:v DOS
+															
+															
+															
+															
+															
+															
+															
+
+						listaSent							listaSent
+
+															
+
+						break:b								break:b	
+															
+															
+															
+															
+															
+															
+															
+															
+															
+
+			;								;
+
+break 		::=		BREAK PYC			break 		::=		BREAK PYC		
+															
+															
+
+			|								|				
+															
+															
+			;								;
+
+listaCase	::=		case:c				listaCase	::=		case:c			
+															
+															
+											
+			|		listaCase case:c				|		listaCase case:c
+															
+															
+			;								;
+
+varOrNum	::=		variable:i			varOrNum	::=		variable:i		
+															
+															
+
+			|		numero:n					|		numero:n	
+															
+															
+			;								;
+
+stepPart	::=	STEP exp:e1				stepPart	::=	STEP exp:e1			
+															
+															
+
+			|								|				
+															
+															
+
+			;								;
+
+forArray	::=	IDENT:i					forArray	::=	IDENT:i				
+															
+															
+										
+			|	AL arrayIni:l CL					|	AL arrayIni:l CL	
+															
+															
+
+			;								;
+
+tipo            ::=     INT                             {:	tipo            ::=     INT                             {:
+															
+															
+															
+                |       FLOAT                           {: 	                |       FLOAT                           {: 
+															
+															
+
+				|		CHAR						|		CHAR	
+															
+															
+                ;						                ;
+
+listaDec	::=	dec					listaDec	::=	dec
+		|	listaDec COMA dec					|	listaDec COMA dec
+		;								;
+
+dec		::=		IDENT:i ASIG exp:e1		dec		::=		IDENT:i ASIG exp:e1	
+															
+															
+															
+
+		|		IDENT:i						|		IDENT:i			
+															
+															
+
+		|		IDENT:i ASIG character	{:			|		IDENT:i ASIG character	{:
+
+															
+
+		| IDENT:i dimensiones:d ASIG exp:e1				| IDENT:i dimensiones:d ASIG exp:e1	
+															
+															
+															
+															
+															
+															
+
+		| IDENT:i dimensiones:d ASIG AL arrayIni:e1 C			| IDENT:i dimensiones:d ASIG AL arrayIni:e1 C
+															
+															
+															
+															
+															
+															
+
+		|	IDENT:i dimensiones:d					|	IDENT:i dimensiones:d		
+															
+															
+															
+															
+															
+
+		|	POR IDENT:i						|	POR IDENT:i			
+															
+															
+															
+		;								;
+
+dimensiones	::=		AC NUMERO:n CC 			dimensiones	::=		AC NUMERO:n CC 		
+															
+															
+															
+
+			|	dimensiones:d AC NUMERO:n CC				|	dimensiones:d AC NUMERO:n CC
+															
+															
+															
+			;								;
+
+character	::=		COMILLAS IDENT:i COMILLAS	character	::=		COMILLAS IDENT:i COMILLAS
+
+															
+			;								;
+
+typedefSent		::=		TYPEDEF tipo IDENT:i	typedefSent		::=		TYPEDEF tipo IDENT:i
+															
+															
+															
+															
+															
+															
+															
+															
+				;								;
+
+
+elsePart 	::= 	ELSE sent				elsePart 	::= 	ELSE sent
+	   	|							   	|
+	   	;							   	;
+
+exp		::=	exp:e1 MAS exp:e2			exp		::=	exp:e1 MAS exp:e2		
+															
+															
+
+		|	exp:e1 MENOS exp:e2					|	exp:e1 MENOS exp:e2		
+															
+															
+
+		|	exp:e1 POR exp:e2					|	exp:e1 POR exp:e2		
+															
+															
+
+		| 	exp:e1 DIV exp:e2					| 	exp:e1 DIV exp:e2		
+															
+															
+
+		|	exp:e1 MOD exp:e2					|	exp:e1 MOD exp:e2		
+															
+															
+															
+															
+
+		| 	MENOS exp:e1						| 	MENOS exp:e1			
+															
+															
+										
+		| 	AP exp:e1 CP						| 	AP exp:e1 CP			
+															
+															
+
+		|	conditionalQuest:q					|	conditionalQuest:q		
+															
+															
+
+		|	casting:n						|	casting:n			
+															
+															
+
+        |  incremento:i PYC             {:		      |			|	incremento:i			
+                                              RESULT = i;     |								
+                                        :}		      |								
+							      |			
+		|	asig:a							|	asig:a				
+															
+															
+
+		|	variable:v						|	variable:v			
+															
+															
+
+		|	numero:n						|	numero:n			
+															
+															
+
+		;								;
+
+numero		::=		NUMERO:n			numero		::=		NUMERO:n		
+															
+															
+										
+		|		NUMEROF:n					|		NUMEROF:n		
+															
+															
+		;								;
+
+asig 		::= 	IDENT:i ASIG exp:e1 			asig 		::= 	IDENT:i ASIG exp:e1 		
+															
+                                                        :}	                                                        :}
+
+		|		IDENT:i dimensionesAsig:a ASI			|		IDENT:i dimensionesAsig:a ASI
+															
+															
+															
+
+		|		IDENT:i ASIG AL arrayIni:a CL			|		IDENT:i ASIG AL arrayIni:a CL
+															
+															
+
+		|		IDENT:i MASEQ exp:e1				|		IDENT:i MASEQ exp:e1	
+															
+															
+
+		|		IDENT:i dimensionesAsig:a MAS			|		IDENT:i dimensionesAsig:a MAS
+															
+															
+															
+
+		;								;
+
+dimensionesAsig 	::=		AC exp:e CC		dimensionesAsig 	::=		AC exp:e CC	
+															
+															
+															
+
+					|		dimen						|		dimen
+															
+															
+															
+
+					;								;
+
+arrayIni 			::=		 exp:e 	      |	arrayIni 			::=		exp:e	
+															
+															
+															
+
+					|	arrayIni:a CO						|	arrayIni:a CO
+															
+															
+															
+					;								;
+
+variable	::=	IDENT:i					variable	::=	IDENT:i				
+															
+															
+                                            }			                                            }
+                                            else{		                                            else{
+                                                Generador.err	                                                Generador.err
+                                                Generador.hal	                                                Generador.hal
+                                            }			                                            }
+															
+
+			|	IDENT:i dimensionesAsig:a     |				|	IDENT:i AC exp:e CC	
+							      |								
+							      |								
+							      |								
+							      |								
+							      |								
+							      |								
+							      |								
+							      |								
+							      |								
+							      |								
+							      |
+							      <
+							      <
+							      <
+							      <
+							      <
+							      <
+							      <
+			|	POR IDENT:i		{:				|	POR IDENT:i		{:
+															
+															
+															
+															
+															
+															
+															
+															
+															
+															
+
+			|	DIR IDENT:i		{:				|	DIR IDENT:i		{:
+															
+															
+															
+															
+															
+															
+															
+															
+															
+															
+
+			;								;
+
+incremento	::=	MASMAS IDENT:i1                 {:	incremento	::=	MASMAS IDENT:i1                 {:
+                                                             	                                                             
+                                                        :} %p	                                                        :} %p
+
+                |       IDENT:i1 MASMAS                 {:	                |       IDENT:i1 MASMAS                 {:
+                                                             	                                                             
+                                                             	                                                             
+                                                             	                                                             
+                                                             	                                                             
+                                                        :}	                                                        :}
+
+                |       MENOSMENOS IDENT:i1             {:	                |       MENOSMENOS IDENT:i1             {:
+                                                             	                                                             
+                                                        :} %p	                                                        :} %p
+
+                |       IDENT:i1 MENOSMENOS             {:	                |       IDENT:i1 MENOSMENOS             {:
+                                                             	                                                             
+                                                             	                                                             
+                                                             	                                                             
+                                                             	                                                             
+                                                        :}	                                                        :}
+		;								;
+
+casting 	::=	CASINT exp:e 	{:			casting 	::=	CASINT exp:e 	{:
+															
+															
+
+			| CASFLOAT varOrNum:n1 {: RESULT = Ge				| CASFLOAT varOrNum:n1 {: RESULT = Ge
+          							          	
+			  DIV varOrNum:n2	{: 					  DIV varOrNum:n2	{: 
+															
+															
+															
+			;								;
+
+cond 		::=	exp:e1 EQ exp:e2		{:	cond 		::=	exp:e1 EQ exp:e2		{:
+															
+							:}								:}
+
+		|	exp:e1 NEQ exp:e2		{:			|	exp:e1 NEQ exp:e2		{:
+															
+							:}								:}
+
+		| 	exp:e1 MEQ exp:e2		{:			| 	exp:e1 MEQ exp:e2		{:
+															
+							:}								:}
+
+		|	exp:e1 MEOQ exp:e2		{:			|	exp:e1 MEOQ exp:e2		{:
+															
+							:}								:}
+
+		| 	exp:e1 MAQ exp:e2		{:			| 	exp:e1 MAQ exp:e2		{:
+															
+							:}								:}
+
+		| 	exp:e1 MAOQ exp:e2		{:			| 	exp:e1 MAOQ exp:e2		{:
+															
+							:}								:}
+
+		|	NOT cond:c			{:			|	NOT cond:c			{:
+															
+															
+															
+															
+							:}								:}
+									
+		| 	cond:c1 AND			{:			| 	cond:c1 AND			{:
+															
+							:}								:}
+
+			cond:c2				{:				cond:c2				{:
+															
+															
+															
+							:}								:}
+
+		|	cond:c1 OR			{:			|	cond:c1 OR			{:
+															
+							:}								:}
+
+			cond:c2				{:				cond:c2				{:
+															
+															
+															
+							:}								:}
+
+		|	AP cond:c CP	{:					|	AP cond:c CP	{:
+															
+							:}								:}
+
+		|	TRUE			{:				|	TRUE			{:
+															
+															
+															
+							:}								:}
+
+		|	FALSE			{:				|	FALSE			{:
+															
+															
+															
+							:}								:}
+		;								;

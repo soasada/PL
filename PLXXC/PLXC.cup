@@ -500,10 +500,10 @@ exp		::=	exp:e1 MAS exp:e2			{:
 											RESULT = n; 
 										:}
 
-		|	incremento:i				{:
-											RESULT = i;
-										:}
-		
+        |  incremento:i PYC             {:
+                                              RESULT = i;
+                                        :}
+
 		|	asig:a						{:
 											RESULT = a;
 										:}
@@ -563,7 +563,7 @@ dimensionesAsig 	::=		AC exp:e CC						{:
 
 					;
 
-arrayIni 			::=		exp:e							{:
+arrayIni 			::=		 exp:e 							{:
 																RESULT = new ArrayList<String>();
 																RESULT.add(e);
 															:}
@@ -584,18 +584,25 @@ variable	::=	IDENT:i					{:
                                             }
 										:}
 
-			|	IDENT:i AC exp:e CC		{:
-											if(Var.exists(i)){
-												String aux = Generador.getTemp(Var.getLastVar(i).getTipo());
-												Generador.assignment(aux , Var.getVar(i) + "[" + e + "]");
-												RESULT = aux;
-											}
-											else{
-												Generador.error();
-												Generador.halt();
-											}
-										:}
-
+			|	IDENT:i dimensionesAsig:a	{:
+												String aux = "";
+												if(Var.exists(i)){
+													if(a.size() == 1){
+														aux = Generador.getTemp(Var.getLastVar(i).getTipo());
+														Generador.assignment(aux , Var.getVar(i) + "[" + a.get(0) + "]");
+														RESULT = aux;
+														dimsAsig.clear();
+													}
+													else{
+														RESULT = Generador.returnMulti(i, a);
+														dimsAsig.clear();
+													}
+												}
+												else{
+													Generador.error();
+													Generador.halt();
+												}
+											:}
 			|	POR IDENT:i		{:
 									if(Var.getLastVar(i).isPointer()){
 										String aux = Generador.getTemp(Var.getLastVar(i).getTipo());

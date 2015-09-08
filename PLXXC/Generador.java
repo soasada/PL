@@ -147,13 +147,11 @@ public class Generador {
 				int tipo = 0;
 				int tipo2 = 0;
 				boolean flag = false;
-
+				String tmp = "";
 				// System.out.println("IDENT: " + ident + "\n" + "INDEX: " + index + "\n" +  " EXP: " + exp);
 
 				for(int i = 0; i < index.size(); i++){
 					dimension(ident, index.get(i), i);
-
-					System.out.println("HOLAAAAA: " + index.get(i));
 
 					tipo = checkExp(exp);
 					tipo2 = Var.getLastVar(ident).getTipo();
@@ -166,23 +164,56 @@ public class Generador {
 					// System.out.println("tipo: " + tipo + " tipo2: " + tipo2);
 
 					if((tipo == 1 && tipo2 == 2) && flag){
-							String tmp = getTemp(Var.getLastVar(ident).getTipo());
+							tmp = getTemp(Var.getLastVar(ident).getTipo());
 							out.println("	" + tmp + " = (float) " + exp + ";");
 							out.println("   " + ident + "[" + index.get(i) + "]" + " = " + tmp + ";");
 					}
 					else if((tipo2 == 1 && tipo == 2) || (tipo2 == 2 && tipo == 1) && !flag){
-							String tmp = getTemp(tipo2);
+							tmp = getTemp(tipo2);
 							out.println("	" + tmp + " = (float) " + exp + ";");
 							out.println("   " + ident + "[" + index.get(i) + "]" + " = " + tmp + ";");
 					}
 					else{
-							String aux = ident + "[" + index.get(i) + "]";
-							out.println("   " + aux +  " = " + exp + ";");
+							if(index.size() > 1 && i == 0){
+								tmp = getTemp(tipo);
+								out.println("	" + tmp + " = " + Var.getLastVar(ident).getTam2() + " * " + index.get(0) + ";" );
+								out.println("	" + tmp + " = " + tmp + " + " + Var.getLastVar(ident).getTam() + ";");
+							}
+							else if(index.size() == 1){
+								String aux = ident + "[" + index.get(i) + "]";
+								out.println("   " + aux +  " = " + exp + ";");
+							}
+							if(index.size() > 1 && i == index.size()-1){
+								String aux = ident + "[" + tmp + "]";
+								out.println("	" + aux + " = " + exp + ";");
+							}
 					}
 
 				}
 
 				return ident;
+		}
+
+		public static String returnMulti(String ident, ArrayList<String> index){
+			String tmp = "";
+			String tmp2 = "";
+			int tipo = Var.getLastVar(ident).getTipo();
+		
+			for(int i = 0; i < index.size(); i++){
+				dimension(ident, index.get(i), i);
+
+				if(i == 0){
+					tmp = getTemp(tipo);
+                 	out.println("   " + tmp + " = " + Var.getLastVar(ident).getTam2() + " * " + index.get(0) + ";" );
+                 	out.println("   " + tmp + " = " + tmp + " + " + Var.getLastVar(ident).getTam() + ";");
+				}
+				else{
+					tmp2 = getTemp(tipo);
+					out.println("	" + tmp2 + " = " + ident + "[" + tmp + "]" + ";");
+				}
+			}
+
+			return tmp2;
 		}
 
         public static String assignmentPlus(String ident, ArrayList<String> index, String exp){
